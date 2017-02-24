@@ -1,4 +1,13 @@
 /*
+ * A command line utility for reading OBD-II diagnostic data from a 
+ * vehicle via a CAN socket.
+ *
+ * This file is based off the file `isotprecv.c` contained in the
+ * https://github.com/linux-can/can-utils GitHub repository.
+ * The original copyright notice is reproduced below.
+ */
+
+/*
  * isotprecv.c
  *
  * Copyright (c) 2008 Volkswagen Group Electronic Research
@@ -59,7 +68,7 @@
 #define BUFSIZE 5000 /* size > 4095 to check socket API internal checks */
 
 void print_usage(char *program_name) {
-	printf("Usage: %s -r <receive CAN ID> -t <transfer CAN ID> <can interface>\n", program_name);
+	printf("Usage: %s -t <transfer CAN ID> -r <receive CAN ID> <CAN interface>\n	<transfer CAN ID>: The CAN ID that will be used for sending the diagnostic requests. For 11-bit identifiers, this can be either the broadcast ID, 0x7DF, or an ID in the range 0x7E0 to 0x7E7, indicating a particular ECU.\n	<receive CAN ID>: The CAN ID that the ECU will be using to respond to the diagnostic requests that are sent. For 11-bit identifiers, this is an ID in the range 0x7E8 to 0x7EF (i.e. <transfer CAN ID> + 8)\n", program_name);
 }
 
 int main(int argc, char **argv)
