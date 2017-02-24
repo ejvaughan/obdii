@@ -45,6 +45,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
 
 #include <net/if.h>
 #include <sys/types.h>
@@ -58,7 +59,7 @@
 #define BUFSIZE 5000 /* size > 4095 to check socket API internal checks */
 
 void print_usage(char *program_name) {
-	printf("Usage: %s -r <receive CAN ID> -t <transfer CAN ID> <can interface>", program_name);
+	printf("Usage: %s -r <receive CAN ID> -t <transfer CAN ID> <can interface>\n", program_name);
 }
 
 int main(int argc, char **argv)
@@ -67,9 +68,6 @@ int main(int argc, char **argv)
     struct sockaddr_can addr;
     int opt, i;
     extern int optind, opterr, optopt;
-
-    unsigned char msg[BUFSIZE];
-    int nbytes;
 
     addr.can_addr.tp.tx_id = addr.can_addr.tp.rx_id = NO_CAN_ID;
 
@@ -118,14 +116,29 @@ int main(int argc, char **argv)
 	exit(1);
     }
 
-    do {
-	    nbytes = read(s, msg, BUFSIZE);
-	    if (nbytes > 0 && nbytes < BUFSIZE)
-		    for (i=0; i < nbytes; i++)
-			    printf("%02X ", msg[i]);
-	    printf("\n");
-    } while (loop);
+    // Send an OBD-II request for the engine RPMs
+    char request[] = { 0x01, 0x0C }; // mode 1, PID 0C
+    int retval = write(s, request, sizeof(request)); 
 
+    if (retval < 0 || retval != sizeof(request)) {
+	fprintf(stderr, "There was an error sending the request: %i", retval);
+	exit(1);
+    }
+
+    // Receive the response 
+    const int response_length = 4;
+    char response[response_length];
+    retval = read(s, response, response_length);
+
+    if (retval < 0 || retval != response_length) {
+	fprintf(stderr, "There was an error receiving the response: %i", retval);
+	exit(1);
+    }
+
+    for (i = 0; i < response_length; ++i) {
+	printf("%02X ", response[i]);
+    }
+    
     close(s);
 
     return 0;
