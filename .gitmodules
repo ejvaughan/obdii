@@ -1,0 +1,3 @@
+[submodule "can-isotp-modules"]
+	path = can-isotp-modules
+	url = https://github.com/hartkopp/can-isotp-modules.git
