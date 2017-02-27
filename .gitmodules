@@ -1,3 +1,6 @@
 [submodule "can-isotp-modules"]
 	path = can-isotp-modules
 	url = https://github.com/hartkopp/can-isotp-modules.git
+[submodule "aws-iot-device-sdk-embedded-C"]
+	path = aws-iot-device-sdk-embedded-C
+	url = https://github.com/aws/aws-iot-device-sdk-embedded-C.git
