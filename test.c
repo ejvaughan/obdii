@@ -1,5 +1,5 @@
 /*
- * A command line utility for reading OBD-II diagnostic data from a 
+ * A command line utility for reading OBD-II diagnostic data from a
  * vehicle via a CAN socket.
  *
  * This file is based off the file `isotprecv.c` contained in the
@@ -64,6 +64,8 @@
 #include <linux/can.h>
 #include <linux/can/isotp.h>
 
+#include "OBDII.h"
+
 #define NO_CAN_ID 0xFFFFFFFFU
 #define BUFSIZE 5000 /* size > 4095 to check socket API internal checks */
 
@@ -110,7 +112,7 @@ int main(int argc, char **argv)
 	    print_usage(basename(argv[0]));
 	    exit(1);
     }
-  
+
     if ((s = socket(PF_CAN, SOCK_DGRAM, CAN_ISOTP)) < 0) {
 	perror("socket");
 	exit(1);
@@ -126,28 +128,27 @@ int main(int argc, char **argv)
     }
 
     // Send an OBD-II request for the engine RPMs
-    char request[] = { 0x01, 0x0C }; // mode 1, PID 0C
-    int retval = write(s, request, sizeof(request)); 
+    int retval = write(s, &OBDIICommands.engineRPMs.payload, sizeof(OBDIICommands.engineRPMs.payload));
 
-    if (retval < 0 || retval != sizeof(request)) {
-	fprintf(stderr, "There was an error sending the request: %i", retval);
-	exit(1);
+    if (retval < 0 || retval != sizeof(OBDIICommands.engineRPMs.payload)) {
+		fprintf(stderr, "There was an error sending the request: %i", retval);
+		exit(1);
     }
 
-    // Receive the response 
+    // Receive the response
     const int response_length = 4;
     char response[response_length];
     retval = read(s, response, response_length);
 
     if (retval < 0 || retval != response_length) {
-	fprintf(stderr, "There was an error receiving the response: %i", retval);
-	exit(1);
+		fprintf(stderr, "There was an error receiving the response: %i", retval);
+		exit(1);
     }
 
     for (i = 0; i < response_length; ++i) {
-	printf("%02X ", response[i]);
+		printf("%02X ", response[i]);
     }
-    
+
     close(s);
 
     return 0;

@@ -1,16 +1,26 @@
 #ifndef __OBDII_H
 #define __OBDII_H
 
-typedef struct {
-	char *name;
+typedef struct OBDIIResponse {
+	int success;
 
-	struct {
-		char mode;
-		char PID;
-	} payload;
+	union {
+		float floatValue;
+		int intValue;
+	};
+} OBDIIResponse;
+
+struct OBDIICommand;
+typedef OBDIIResponse (*OBDIIResponseDecoder)(struct OBDIICommand, char *, int);
+
+typedef struct OBDIICommand {
+	char *name;
+	char payload[2];
+	short expectedResponseLength;
+	OBDIIResponseDecoder responseDecoder;
 } OBDIICommand;
 
-typedef struct {
+struct OBDIICommands {
 	OBDIICommand supportedPIDs_0_to_20;
 	OBDIICommand monitorStatus;
 	OBDIICommand freezeDTC;
@@ -27,8 +37,8 @@ typedef struct {
 	OBDIICommand vehicleSpeed;			// km/h
 	OBDIICommand timingAdvance;			// Degrees before TDC
 	OBDIICommand intakeAirTemperature;		// Celsius
-} OBDIICommandsT;
+};
 
-extern OBDIICommandsT OBDIICommands;
+extern struct OBDIICommands OBDIICommands;
 
 #endif /* OBDII.h */

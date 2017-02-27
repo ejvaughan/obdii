@@ -1,9 +1,9 @@
-IDIR=include
+IDIR=.
 ODIR=build
 CC=gcc
 CFLAGS=-I can-isotp-modules/include/ -I $(IDIR)
 
-_DEPS =
+_DEPS = OBDII.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 _OBJ = test.o OBDII.o
