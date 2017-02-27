@@ -11,7 +11,7 @@ typedef struct OBDIIResponse {
 } OBDIIResponse;
 
 struct OBDIICommand;
-typedef OBDIIResponse (*OBDIIResponseDecoder)(struct OBDIICommand, char *, int);
+typedef void (*OBDIIResponseDecoder)(OBDIIResponse *, char *, int);
 
 typedef struct OBDIICommand {
 	char *name;
@@ -40,5 +40,7 @@ struct OBDIICommands {
 };
 
 extern struct OBDIICommands OBDIICommands;
+
+OBDIIResponse OBDIIDecodeResponseForPayload(OBDIICommand command, char *responsePayload, int len);
 
 #endif /* OBDII.h */
