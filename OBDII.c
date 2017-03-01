@@ -1,61 +1,120 @@
+#include <stdlib.h>
 #include "OBDII.h"
 
-#define NULL 0
-
-int OBDIIResponseSuccessful(OBDIICommand command, char *payload, int len)
+int OBDIIResponseSuccessful(OBDIICommand command, unsigned char *payload, int len)
 {
-	// A successful response has the exepected length and echoes the mode + 0x40 and the PID
-	return len == command.expectedResponseLength &&
-	payload[0] == command.payload[0] + 0x40 &&
-	payload[1] == command.payload[1];
+	if (len <= 0) {
+		return 0;
+	}
+
+	// For responses whose length we can anticipate, make sure the actual length matches
+	if (command.expectedResponseLength != 0 && len != command.expectedResponseLength) {
+		return 0;
+	}
+
+	// A successful reseponse adds 0x40 to the mode byte
+	char mode = command.payload[0];
+	if (payload[0] != mode + 0x40) {
+		return 0;
+	}
+
+	// PIDs should match
+	if (mode == 0x01 && payload[1] != command.payload[1]) {
+		return 0;
+	}
+
+	return 1;
 }
 
-void OBDIIDecodeSupportedPIDs(OBDIIResponse *response, char *responsePayload, int len)
+void OBDIIDecodeSupportedPIDs(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
 	response->intValue = (responsePayload[2] << 24) | (responsePayload[3] << 16) | (responsePayload[4] << 8) | responsePayload[5];
 }
 
-void OBDIIDecodeEngineRPMs(OBDIIResponse *response, char *responsePayload, int len)
+void OBDIIDecodeEngineRPMs(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
 	response->floatValue = (256.0 * responsePayload[2] + responsePayload[3]) / 4.0;
 }
 
-void OBDIIDecodeVehicleSpeed(OBDIIResponse *response, char *responsePayload, int len)
+void OBDIIDecodeVehicleSpeed(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
 	response->intValue = responsePayload[2];
 }
 
-void OBDIIDecodeTimingAdvance(OBDIIResponse *response, char *responsePayload, int len)
+void OBDIIDecodeTimingAdvance(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
 	response->floatValue = (responsePayload[2] / 2.0) - 64;
 }
 
-void OBDIIDecodeTemperature(OBDIIResponse *response, char *responsePayload, int len)
+void OBDIIDecodeTemperature(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
 	response->intValue = responsePayload[2] - 40;
 }
 
-void OBDIIDecodeCalculatedEngineLoad(OBDIIResponse *response, char *responsePayload, int len)
+void OBDIIDecodeCalculatedEngineLoad(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
 	response->floatValue = responsePayload[2] / 2.55;
 }
 
-void OBDIIDecodeFuelTrim(OBDIIResponse *response, char *responsePayload, int len)
+void OBDIIDecodeFuelTrim(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
 	response->floatValue = responsePayload[2] / 1.28 - 100;
 }
 
-void OBDIIDecodeFuelPressure(OBDIIResponse *response, char *responsePayload, int len)
+void OBDIIDecodeFuelPressure(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
 	response->intValue = 3 * responsePayload[2];
 }
 
-void OBDIIDecodeIntakeManifoldPressure(OBDIIResponse *response, char *responsePayload, int len)
+void OBDIIDecodeIntakeManifoldPressure(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
 	response->intValue = responsePayload[2];
 }
 
-OBDIIResponse OBDIIDecodeResponseForCommand(OBDIICommand command, char *payload, int len)
+void OBDIIDecodeDTCs(OBDIIResponse *response, unsigned char *responsePayload, int len)
+{
+	#define RawToAscii(raw) (((raw) > 9) ? 'A' + (raw) - 9 : '0' + (raw))
+
+	const int bytesPerDTC = 2;
+
+	int numBytes = len - 1;
+	if (numBytes % bytesPerDTC != 0) {
+		return;
+	}
+
+	int numDTCs = numBytes / bytesPerDTC;
+	response->DTCs = malloc(numDTCs * sizeof(*response->DTCs));
+	response->numDTCs = numDTCs;
+
+	int i;
+	for (i = 0; i < numDTCs; i++) {
+		int offset = 1 + i * bytesPerDTC;
+		unsigned char a = responsePayload[offset];
+		unsigned char b = responsePayload[offset + 1];
+
+		char *DTC = response->DTCs[i];
+
+		// Fill in the DTC characters
+		unsigned char rawFirstCharacter = a >> 6;
+		if (rawFirstCharacter == 0) {
+			DTC[0] = 'P'; // Powertrain
+		} else if (rawFirstCharacter == 1) {
+			DTC[0] = 'C'; // Chassis
+		} else if (rawFirstCharacter == 2) {
+			DTC[0] = 'B'; // Body
+		} else if (rawFirstCharacter == 3) {
+			DTC[0] = 'U'; // Network
+		}
+
+		DTC[1] = '0' + ((a & 0x30) >> 4);
+		DTC[2] = RawToAscii(a & 0x0F);
+		DTC[3] = RawToAscii(b >> 4);
+		DTC[4] = RawToAscii(b & 0x0F);
+		DTC[5] = '\0';
+	}
+}
+
+OBDIIResponse OBDIIDecodeResponseForCommand(OBDIICommand command, unsigned char *payload, int len)
 {
 	OBDIIResponse response = { 0 };
 
@@ -64,6 +123,13 @@ OBDIIResponse OBDIIDecodeResponseForCommand(OBDIICommand command, char *payload,
 	}
 
 	return response;
+}
+
+void OBDIIResponseFree(OBDIIResponse response)
+{
+	if (response.DTCs != NULL) {
+		free(response.DTCs);
+	}
 }
 
 struct OBDIICommands OBDIICommands = {
@@ -82,5 +148,6 @@ struct OBDIICommands OBDIICommands = {
 	{ "Engine RPM", { 0x01, 0x0C }, 4, &OBDIIDecodeEngineRPMs },
 	{ "Vehicle speed", { 0x01, 0x0D }, 3, &OBDIIDecodeVehicleSpeed },
 	{ "Timing advance", { 0x01, 0x0E }, 3, &OBDIIDecodeTimingAdvance },
-	{ "Intake air temperature", { 0x01, 0x0F }, 3, &OBDIIDecodeTemperature }
+	{ "Intake air temperature", { 0x01, 0x0F }, 3, &OBDIIDecodeTemperature },
+	{ "Get DTCs", { 0x03 }, 0, &OBDIIDecodeDTCs }
 };

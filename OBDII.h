@@ -8,14 +8,17 @@ typedef struct OBDIIResponse {
 		float floatValue;
 		int intValue;
 	};
+
+	char (*DTCs)[6];
+	int numDTCs;
 } OBDIIResponse;
 
 struct OBDIICommand;
-typedef void (*OBDIIResponseDecoder)(OBDIIResponse *, char *, int);
+typedef void (*OBDIIResponseDecoder)(OBDIIResponse *, unsigned char *, int);
 
 typedef struct OBDIICommand {
 	char *name;
-	char payload[2];
+	unsigned char payload[2];
 	short expectedResponseLength;
 	OBDIIResponseDecoder responseDecoder;
 } OBDIICommand;
@@ -37,10 +40,12 @@ struct OBDIICommands {
 	OBDIICommand vehicleSpeed;			// km/h
 	OBDIICommand timingAdvance;			// Degrees before TDC
 	OBDIICommand intakeAirTemperature;		// Celsius
+	OBDIICommand getDTCs;
 };
 
 extern struct OBDIICommands OBDIICommands;
 
-OBDIIResponse OBDIIDecodeResponseForPayload(OBDIICommand command, char *responsePayload, int len);
+OBDIIResponse OBDIIDecodeResponseForCommand(OBDIICommand command, unsigned char *responsePayload, int len);
+void OBDIIResponseFree(OBDIIResponse response);
 
 #endif /* OBDII.h */

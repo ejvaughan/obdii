@@ -65,6 +65,7 @@
 #include <linux/can/isotp.h>
 
 #include "OBDII.h"
+#include "OBDIICommunication.h"
 
 #define NO_CAN_ID 0xFFFFFFFFU
 #define BUFSIZE 5000 /* size > 4095 to check socket API internal checks */
@@ -114,40 +115,40 @@ int main(int argc, char **argv)
     }
 
     if ((s = socket(PF_CAN, SOCK_DGRAM, CAN_ISOTP)) < 0) {
-	perror("socket");
-	exit(1);
+		perror("socket");
+		exit(1);
     }
 
     addr.can_family = AF_CAN;
     addr.can_ifindex = if_nametoindex(argv[optind]);
 
     if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-	perror("bind");
-	close(s);
-	exit(1);
-    }
-
-    // Send an OBD-II request for the engine RPMs
-    int retval = write(s, &OBDIICommands.engineRPMs.payload, sizeof(OBDIICommands.engineRPMs.payload));
-
-    if (retval < 0 || retval != sizeof(OBDIICommands.engineRPMs.payload)) {
-		fprintf(stderr, "There was an error sending the request: %i", retval);
+		perror("bind");
+		close(s);
 		exit(1);
     }
 
-    // Receive the response
-    const int response_length = 4;
-    char response[response_length];
-    retval = read(s, response, response_length);
+    // OBDIIResponse dtcResponse = OBDIIPerformQuery(s, OBDIICommands.getDTCs);
 
-    if (retval < 0 || retval != response_length) {
-		fprintf(stderr, "There was an error receiving the response: %i", retval);
-		exit(1);
-    }
+    // for (i = 0; i < dtcResponse.numDTCs; ++i) {
+    // 	printf("%s", dtcResponse.DTCs[i]);
+    // }
 
-    for (i = 0; i < response_length; ++i) {
-		printf("%02X ", response[i]);
-    }
+    // OBDIIResponseFree(dtcResponse);
+
+    while (1) {
+	    // Send a request for the engine RPMs
+	    OBDIIResponse response = OBDIIPerformQuery(s, OBDIICommands.engineRPMs);
+	    printf("Engine RPMs: %f\n", response.floatValue);
+
+	    response = OBDIIPerformQuery(s, OBDIICommands.engineCoolantTemperature);
+	    printf("Engine coolant temperature (Celsius): %i\n", response.intValue);
+
+	    response = OBDIIPerformQuery(s, OBDIICommands.calculatedEngineLoad);
+	    printf("Calculated engine load: %f\n", response.floatValue);
+
+	    sleep(1);
+   }
 
     close(s);
 
