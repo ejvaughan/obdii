@@ -6,7 +6,8 @@ typedef struct OBDIIResponse {
 
 	union {
 		float floatValue;
-		int intValue;
+		unsigned int bitfieldValue;
+		char *stringValue; // for VIN or ECU name
 	};
 
 	char (*DTCs)[6];
@@ -40,7 +41,9 @@ struct OBDIICommands {
 	OBDIICommand vehicleSpeed;			// km/h
 	OBDIICommand timingAdvance;			// Degrees before TDC
 	OBDIICommand intakeAirTemperature;		// Celsius
-	OBDIICommand getDTCs;
+	OBDIICommand DTCs;
+	OBDIICommand VIN;
+	OBDIICommand ECUName;
 };
 
 extern struct OBDIICommands OBDIICommands;

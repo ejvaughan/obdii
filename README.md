@@ -2,7 +2,7 @@
 
 ## Overview
 
-This utility is designed to work with any vehicle that is exposed on the local machine as a CAN network interface. Therefore, any OBD-II adaptor that exposes itself as a CAN device can be used. For example, the (PiCAN2)[http://skpang.co.uk/catalog/pican2-canbus-board-for-raspberry-pi-23-p-1475.html] is such an adaptor for the Raspberry Pi. Linux supports a family of sockets specifically for CAN communication (the PF_CAN protocol family), which we leverage in our utility.
+This utility is designed to work with any vehicle that is exposed on the local machine as a CAN network interface. Therefore, any OBD-II adaptor that exposes itself as a CAN device can be used. For example, the [PiCAN2](http://skpang.co.uk/catalog/pican2-canbus-board-for-raspberry-pi-23-p-1475.html) is such an adaptor for the Raspberry Pi. Linux supports a family of sockets specifically for CAN communication (the PF_CAN protocol family), which we leverage in our utility.
 
 ## How to Build
 
