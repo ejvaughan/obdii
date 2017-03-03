@@ -217,6 +217,22 @@ int main(int argc, char** argv) {
 	DEBUG("Using clientCRT %s", clientCRT);
 	DEBUG("Using clientKey %s", clientKey);
 
+	// Set up the CAN socket
+	int s;
+    	if ((s = socket(PF_CAN, SOCK_DGRAM, CAN_ISOTP)) < 0) {
+		perror("socket");
+		exit(1);
+    	}
+
+    	addr.can_family = AF_CAN;
+    	addr.can_ifindex = if_nametoindex(argv[optind]);
+
+    	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+		perror("bind");
+		close(s);
+		exit(1);
+    	}
+
 	// Connect to the shadow service
 	ShadowParameters_t sp = ShadowParametersDefault;
 	sp.pMyThingName = AWS_IOT_MY_THING_NAME;
@@ -246,22 +262,6 @@ int main(int argc, char** argv) {
 		ERROR("Unable to set Auto Reconnect to true - %d", rc);
 		return rc;
 	}
-
-	// Set up the CAN socket
-	int s;
-    	if ((s = socket(PF_CAN, SOCK_DGRAM, CAN_ISOTP)) < 0) {
-		perror("socket");
-		exit(1);
-    	}
-
-    	addr.can_family = AF_CAN;
-    	addr.can_ifindex = if_nametoindex(argv[optind]);
-
-    	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-		perror("bind");
-		close(s);
-		exit(1);
-    	}
 
 	// loop and publish a change in engine RPMs
 	while (NETWORK_ATTEMPTING_RECONNECT == rc || RECONNECT_SUCCESSFUL == rc || NONE_ERROR == rc) {
@@ -303,6 +303,8 @@ int main(int argc, char** argv) {
 	if (NONE_ERROR != rc) {
 		ERROR("Disconnect error %d", rc);
 	}
+
+	close(s);
 
 	return rc;
 }
