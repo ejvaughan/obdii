@@ -175,14 +175,12 @@ void parseInputArgsForConnectParams(int argc, char** argv) {
 
 int main(int argc, char** argv) {
 	IoT_Error_t rc = NONE_ERROR;
-	int32_t i = 0;
 
 	MQTTClient_t mqttClient;
 	aws_iot_mqtt_init(&mqttClient);
 
 	char JsonDocumentBuffer[MAX_LENGTH_OF_UPDATE_JSON_BUFFER];
 	size_t sizeOfJsonDocumentBuffer = sizeof(JsonDocumentBuffer) / sizeof(JsonDocumentBuffer[0]);
-	char *pJsonStringToUpdate;
 	float engineRPMs = 0.0;
 
 	jsonStruct_t engineRPMsHandler;
