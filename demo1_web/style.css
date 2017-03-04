@@ -1,0 +1,35 @@
+body{
+    width: 760px; /* how wide to make your web page */
+    background-color: black; /* what color to make the background */
+    margin: 0 auto;
+: 0;
+    font:12px/16px Verdana, sans-serif; /* default font */
+}
+div.container{
+    width:90%;
+    position: relative;
+    top:200px;
+    left:20px;
+}
+div.progress{
+   height:30px; 
+}
+div.RPM{
+    position: relative;
+    bottom:20px;
+    left: 220px;
+}
+#connect{
+    text-align: center;
+    padding:15px 32px;
+    width:100px;
+    font-size: 16px;
+}
+div.well{
+    text-align:center;
+    font-size:30px;
+    width:20%;
+    position:relative;
+    left:35%;
+}
+
