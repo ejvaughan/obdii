@@ -85,9 +85,11 @@ IOT_TARGET_MAKE_CMD = $(CC) $(IOT_TARGET_NAME).c $(IOT_TARGET_SRC_FILES) $(COMPI
 all: local iot
 
 local:
+	@mkdir -p $(BUILD_DIR)
 	$(DEBUG)$(LOCAL_TARGET_MAKE_CMD)
 
 iot:
+	@mkdir -p $(BUILD_DIR)
 	$(DEBUG)$(IOT_TARGET_MAKE_CMD)
 	
 clean:
