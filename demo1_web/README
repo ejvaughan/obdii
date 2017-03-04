@@ -1,0 +1,8 @@
+The scripts are used for demo 1
+
+Install
+    1. download all the scripts
+    2. run npm install
+    3. run ./node_modules/.bin/websocket-dev-server 
+
+Based on: http://stesie.github.io/2016/04/aws-iot-pubsub
