@@ -90,6 +90,7 @@
 #include "aws_iot_config.h"
 #include "aws_iot_mqtt_interface.h"
 
+#include "configuration.h"
 #include "OBDII.h"
 #include "OBDIICommunication.h"
 
@@ -111,74 +112,27 @@ void ShadowUpdateStatusCallback(const char *pThingName, ShadowActions_t action, 
 	}
 }
 
-char certDirectory[PATH_MAX + 1] = "../linux_mqtt_openssl-latest/certs";
-		
-char HostAddress[255] = AWS_IOT_MQTT_HOST;
-uint32_t port = AWS_IOT_MQTT_PORT;
-uint8_t numPubs = 5;
-struct sockaddr_can addr;
-
-void parseInputArgsForConnectParams(int argc, char** argv) {
-	int opt;
-
-	while (-1 != (opt = getopt(argc, argv, "t:r:h:p:c:n:"))) {
-		switch (opt) {
-		case 'h':
-			strcpy(HostAddress, optarg);
-			DEBUG("Host %s", optarg);
-			break;
-		case 'p':
-			port = atoi(optarg);
-			DEBUG("arg %s", optarg);
-			break;
-		case 'c':
-			strcpy(certDirectory, optarg);
-			DEBUG("cert root directory %s", optarg);
-			break;
-		case 'n':
-			numPubs = atoi(optarg);
-			DEBUG("num pubs %s", optarg);
-			break;
-		case '?':
-			if (optopt == 'c') {
-				ERROR("Option -%c requires an argument.", optopt);
-			} else if (isprint(optopt)) {
-				WARN("Unknown option `-%c'.", optopt);
-			} else {
-				WARN("Unknown option character `\\x%x'.", optopt);
-			}
-			break;
-		case 't':
-		    addr.can_addr.tp.tx_id = strtoul(optarg, (char **)NULL, 16);
-		    if (strlen(optarg) > 7) {
-			    addr.can_addr.tp.tx_id |= CAN_EFF_FLAG;
-		    }
-		    break;
-
-	    	case 'r':
-		    addr.can_addr.tp.rx_id = strtoul(optarg, (char **)NULL, 16);
-		    if (strlen(optarg) > 7) {
-			    addr.can_addr.tp.rx_id |= CAN_EFF_FLAG;
-	            }
-		    break;
-	    	default:
-		    fprintf(stderr, "Unknown option %c\n", opt);
-		    print_usage(basename(argv[0]));
-		    exit(1);
-		    break;
-	    }
-	}
-
-}
-
 #define MAX_LENGTH_OF_UPDATE_JSON_BUFFER 200
 
 int main(int argc, char** argv) {
-	IoT_Error_t rc = NONE_ERROR;
+	CommandLineArgTemplate endpointURLOption = CreateArgTemplate("e", "endpoing-url", 1, 1, "AWS endpoint URL");
+	CommandLineArgTemplate thingNameOption = CreateArgTemplate("t", "thingname", 1, 1, "AWS thing name");
+	CommandLineArgTemplate portOption = CreateArgTemplate("p", "port", 0, 1, "AWS port");
+	CommandLineArgTemplate certOption = CreateArgTemplate("c", "cert", 1, 1, "AWS cert file");
+	CommandLineArgTemplate privateKeyOption = CreateArgTemplate("p", "privatekey", 1, 1, "AWS private key file");
+	CommandLineArgTemplate rootCertOption = CreateArgTemplate("r", "rootcert", 1, 1, "AWS root CA file");
+	CommandLineArgTemplate transferIDOption = CreateArgTemplate("tx", "transfer-id", 1, 1, "The CAN ID that will be used for sending the diagnostic requests. For 11-bit identifiers, t      his can be either the broadcast ID, 0x7DF, or an ID in the range 0x7E0 to 0x7E7, indicating a particular ECU.");
+	CommandLineArgTemplate receiveIDOption = CreateArgTemplate("rx", "receive-id", 1, 1, "The CAN ID that the ECU will be using to respond to the diagnostic       requests that are sent. For 11-bit identifiers, this is an ID in the range 0x7E8 to 0x7EF (i.e. <transfer CAN ID> + 8)");
 
-	MQTTClient_t mqttClient;
-	aws_iot_mqtt_init(&mqttClient);
+	CommandLineArgTemplate *argTemplates[] = { &endpointURLOption, &thingNameOption, &portOption, &certOption, &privateKeyOption, &rootCertOption, &transferIDOption, &receiveIDOption };
 
+	int nextArgIndex = ParseCommandLineArgs(argc, argv, argTemplates, sizeof(argTemplates)/sizeof(argTemplates[0]), "config", "config");
+
+	if (nextArgIndex != argc - 1) {
+		print_usage(basename(argv[0]));
+		exit(EXIT_FAILURE);
+
+	}
 	char JsonDocumentBuffer[MAX_LENGTH_OF_UPDATE_JSON_BUFFER];
 	size_t sizeOfJsonDocumentBuffer = sizeof(JsonDocumentBuffer) / sizeof(JsonDocumentBuffer[0]);
 	float engineRPMs = 0.0;
@@ -197,23 +151,25 @@ int main(int argc, char** argv) {
 	char clientCRTName[] = AWS_IOT_CERTIFICATE_FILENAME;
 	char clientKeyName[] = AWS_IOT_PRIVATE_KEY_FILENAME;
 
-    	addr.can_addr.tp.tx_id = addr.can_addr.tp.rx_id = NO_CAN_ID;
-
-	parseInputArgsForConnectParams(argc, argv);
-
-    	if ((argc - optind != 1) || (addr.can_addr.tp.tx_id == NO_CAN_ID) || (addr.can_addr.tp.rx_id == NO_CAN_ID)) {
-	    print_usage(basename(argv[0]));
-	    exit(1);
-    	}
-
 	getcwd(CurrentWD, sizeof(CurrentWD));
-	sprintf(rootCA, "%s/%s/%s", CurrentWD, certDirectory, cafileName);
-	sprintf(clientCRT, "%s/%s/%s", CurrentWD, certDirectory, clientCRTName);
-	sprintf(clientKey, "%s/%s/%s", CurrentWD, certDirectory, clientKeyName);
+	sprintf(rootCA, "%s/%s", CurrentWD, cafileName);
+	sprintf(clientCRT, "%s/%s", CurrentWD, clientCRTName);
+	sprintf(clientKey, "%s/%s", CurrentWD, clientKeyName);
 
 	DEBUG("Using rootCA %s", rootCA);
 	DEBUG("Using clientCRT %s", clientCRT);
 	DEBUG("Using clientKey %s", clientKey);
+
+	struct sockaddr_can addr;
+	addr.can_addr.tp.tx_id = strtoul(transferIDOption.value, (char **)NULL, 16);
+	if (strlen(transferIDOption.value) > 7) {
+	        addr.can_addr.tp.tx_id |= CAN_EFF_FLAG;
+	}
+
+	addr.can_addr.tp.rx_id = strtoul(receiveIDOption.value, (char **)NULL, 16);
+	if (strlen(receiveIDOption.value) > 7) {
+	        addr.can_addr.tp.rx_id |= CAN_EFF_FLAG;
+	}
 
 	// Set up the CAN socket
 	int s;
@@ -232,11 +188,16 @@ int main(int argc, char** argv) {
     	}
 
 	// Connect to the shadow service
+	IoT_Error_t rc = NONE_ERROR;
+
+	MQTTClient_t mqttClient;
+	aws_iot_mqtt_init(&mqttClient);
+
 	ShadowParameters_t sp = ShadowParametersDefault;
-	sp.pMyThingName = AWS_IOT_MY_THING_NAME;
-	sp.pMqttClientId = AWS_IOT_MQTT_CLIENT_ID;
-	sp.pHost = HostAddress;
-	sp.port = port;
+	sp.pMyThingName = thingNameOption.value;
+	sp.pMqttClientId = thingNameOption.value;
+	sp.pHost = endpointURLOption.value;
+	sp.port = (portOption.present) ? atoi(portOption.value) : 8883;
 	sp.pClientCRT = clientCRT;
 	sp.pClientKey = clientKey;
 	sp.pRootCA = rootCA;
