@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
 	CommandLineArgTemplate thingNameOption = CreateArgTemplate("t", "thingname", 1, 1, "AWS thing name");
 	CommandLineArgTemplate portOption = CreateArgTemplate("p", "port", 0, 1, "AWS port");
 	CommandLineArgTemplate certOption = CreateArgTemplate("c", "cert", 1, 1, "AWS cert file");
-	CommandLineArgTemplate privateKeyOption = CreateArgTemplate("p", "privatekey", 1, 1, "AWS private key file");
+	CommandLineArgTemplate privateKeyOption = CreateArgTemplate("k", "privatekey", 1, 1, "AWS private key file");
 	CommandLineArgTemplate rootCertOption = CreateArgTemplate("r", "rootcert", 1, 1, "AWS root CA file");
 	CommandLineArgTemplate transferIDOption = CreateArgTemplate("tx", "transfer-id", 1, 1, "The CAN ID that will be used for sending the diagnostic requests. For 11-bit identifiers, t      his can be either the broadcast ID, 0x7DF, or an ID in the range 0x7E0 to 0x7E7, indicating a particular ECU.");
 	CommandLineArgTemplate receiveIDOption = CreateArgTemplate("rx", "receive-id", 1, 1, "The CAN ID that the ECU will be using to respond to the diagnostic       requests that are sent. For 11-bit identifiers, this is an ID in the range 0x7E8 to 0x7EF (i.e. <transfer CAN ID> + 8)");

@@ -9,8 +9,9 @@ DEBUG=@
 
 APP_DIR = .
 APP_INCLUDE_DIRS += -I $(APP_DIR)
-APP_INCLUDE_DIRS += -I ../can-isotp-modules/include/
-APP_SRC_FILES=OBDII.c OBDIICommunication.c
+APP_INCLUDE_DIRS += -I ../can-isotp-modules/include
+APP_INCLUDE_DIRS += -I ../uthash/include
+APP_SRC_FILES=OBDII.c OBDIICommunication.c configuration.c
 BUILD_DIR = ../build
 
 LOCAL_TARGET_NAME = car_local

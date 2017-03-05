@@ -63,7 +63,8 @@ static void AddArgsFromConfigFile(CommandLineArg **parsedArgs, const char *confi
 
 void FreeCommandLineArgTemplateResources(CommandLineArgTemplate *templates[], int templatesCount)
 {
-	for (int i = 0; i < templatesCount; ++i) {
+	int i;
+	for (i = 0; i < templatesCount; ++i) {
 		if (templates[i]->value) {
 			free(templates[i]->value);
 		}
@@ -72,10 +73,6 @@ void FreeCommandLineArgTemplateResources(CommandLineArgTemplate *templates[], in
 
 int ParseCommandLineArgs(int argc, char *argv[], CommandLineArgTemplate *templates[], int templatesCount, char *configFileOptionName, char *defaultConfigFile)
 {
-	if (!argv || argc < 2) {
-		return 0;
-	}
-
 	CommandLineArg *parsedArgs = NULL;
 	
 	int i;
@@ -125,7 +122,8 @@ int ParseCommandLineArgs(int argc, char *argv[], CommandLineArgTemplate *templat
 	}	
 
 	if (templates) {
-		for (int i = 0; i < templatesCount; ++i) {
+		int i;
+		for (i = 0; i < templatesCount; ++i) {
 			CommandLineArgTemplate *template = templates[i];
 			CommandLineArg *found = NULL;
 			HASH_FIND_STR(parsedArgs, template->name, found);
@@ -137,9 +135,9 @@ int ParseCommandLineArgs(int argc, char *argv[], CommandLineArgTemplate *templat
 				template->present = 1;
 				
 				if (template->takesArg) {
-					if (found->option) {
-						template->value = found->option;
-						found->option = NULL;
+					if (found->arg) {
+						template->value = found->arg;
+						found->arg = NULL;
 					} else {
 						printf("%s option takes an argument.\n", template->name);
 						exit(EXIT_FAILURE);
