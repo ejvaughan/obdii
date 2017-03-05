@@ -94,9 +94,9 @@
 #include "OBDII.h"
 #include "OBDIICommunication.h"
 
-#define NO_CAN_ID 0xFFFFFFFFU
+#define MAX_LENGTH_OF_UPDATE_JSON_BUFFER 200
 
-void print_usage(char *program_name) {
+void PrintUsage(char *program_name) {
 	printf("Usage: %s -t <transfer CAN ID> -r <receive CAN ID> <CAN interface>\n	<transfer CAN ID>: The CAN ID that will be used for sending the diagnostic requests. For 11-bit identifiers, this can be either the broadcast ID, 0x7DF, or an ID in the range 0x7E0 to 0x7E7, indicating a particular ECU.\n	<receive CAN ID>: The CAN ID that the ECU will be using to respond to the diagnostic requests that are sent. For 11-bit identifiers, this is an ID in the range 0x7E8 to 0x7EF (i.e. <transfer CAN ID> + 8)\n", program_name);
 }
 
@@ -111,8 +111,6 @@ void ShadowUpdateStatusCallback(const char *pThingName, ShadowActions_t action, 
 		INFO("Update Accepted !!");
 	}
 }
-
-#define MAX_LENGTH_OF_UPDATE_JSON_BUFFER 200
 
 int main(int argc, char** argv) {
 	CommandLineArgTemplate endpointURLOption = CreateArgTemplate("e", "endpoing-url", 1, 1, "AWS endpoint URL");
@@ -129,37 +127,12 @@ int main(int argc, char** argv) {
 	int nextArgIndex = ParseCommandLineArgs(argc, argv, argTemplates, sizeof(argTemplates)/sizeof(argTemplates[0]), "config", "config");
 
 	if (nextArgIndex != argc - 1) {
-		print_usage(basename(argv[0]));
+		PrintUsage(basename(argv[0]));
 		exit(EXIT_FAILURE);
 
 	}
-	char JsonDocumentBuffer[MAX_LENGTH_OF_UPDATE_JSON_BUFFER];
-	size_t sizeOfJsonDocumentBuffer = sizeof(JsonDocumentBuffer) / sizeof(JsonDocumentBuffer[0]);
-	float engineRPMs = 0.0;
 
-	jsonStruct_t engineRPMsHandler;
-	engineRPMsHandler.cb = NULL;
-	engineRPMsHandler.pKey = "engineRPMs";
-	engineRPMsHandler.pData = &engineRPMs;
-	engineRPMsHandler.type = SHADOW_JSON_FLOAT;
-
-	char rootCA[PATH_MAX + 1];
-	char clientCRT[PATH_MAX + 1];
-	char clientKey[PATH_MAX + 1];
-	char CurrentWD[PATH_MAX + 1];
-	char cafileName[] = AWS_IOT_ROOT_CA_FILENAME;
-	char clientCRTName[] = AWS_IOT_CERTIFICATE_FILENAME;
-	char clientKeyName[] = AWS_IOT_PRIVATE_KEY_FILENAME;
-
-	getcwd(CurrentWD, sizeof(CurrentWD));
-	sprintf(rootCA, "%s/%s", CurrentWD, cafileName);
-	sprintf(clientCRT, "%s/%s", CurrentWD, clientCRTName);
-	sprintf(clientKey, "%s/%s", CurrentWD, clientKeyName);
-
-	DEBUG("Using rootCA %s", rootCA);
-	DEBUG("Using clientCRT %s", clientCRT);
-	DEBUG("Using clientKey %s", clientKey);
-
+	// Set up the CAN socket
 	struct sockaddr_can addr;
 	addr.can_addr.tp.tx_id = strtoul(transferIDOption.value, (char **)NULL, 16);
 	if (strlen(transferIDOption.value) > 7) {
@@ -171,7 +144,6 @@ int main(int argc, char** argv) {
 	        addr.can_addr.tp.rx_id |= CAN_EFF_FLAG;
 	}
 
-	// Set up the CAN socket
 	int s;
     	if ((s = socket(PF_CAN, SOCK_DGRAM, CAN_ISOTP)) < 0) {
 		perror("socket");
@@ -187,6 +159,24 @@ int main(int argc, char** argv) {
 		exit(1);
     	}
 
+	char JsonDocumentBuffer[MAX_LENGTH_OF_UPDATE_JSON_BUFFER];
+	size_t sizeOfJsonDocumentBuffer = sizeof(JsonDocumentBuffer) / sizeof(JsonDocumentBuffer[0]);
+	float engineRPMs = 0.0;
+
+	jsonStruct_t engineRPMsHandler;
+	engineRPMsHandler.cb = NULL;
+	engineRPMsHandler.pKey = "engineRPMs";
+	engineRPMsHandler.pData = &engineRPMs;
+	engineRPMsHandler.type = SHADOW_JSON_FLOAT;
+
+	char *certFile = realpath(certOption.value, NULL);
+	char *keyFile = realpath(privateKeyOption.value, NULL);
+	char *rootCAFile = realpath(rootCertOption.value, NULL);
+
+	DEBUG("Using rootCA %s", rootCAFile);
+	DEBUG("Using clientCRT %s", certFile);
+	DEBUG("Using clientKey %s", keyFile);
+
 	// Connect to the shadow service
 	IoT_Error_t rc = NONE_ERROR;
 
@@ -198,15 +188,18 @@ int main(int argc, char** argv) {
 	sp.pMqttClientId = thingNameOption.value;
 	sp.pHost = endpointURLOption.value;
 	sp.port = (portOption.present) ? atoi(portOption.value) : 8883;
-	sp.pClientCRT = clientCRT;
-	sp.pClientKey = clientKey;
-	sp.pRootCA = rootCA;
+	sp.pClientCRT = certFile;
+	sp.pClientKey = keyFile;
+	sp.pRootCA = rootCAFile;
 
 	INFO("Shadow Init");
 	rc = aws_iot_shadow_init(&mqttClient);
 
 	INFO("Shadow Connect");
 	rc = aws_iot_shadow_connect(&mqttClient, &sp);
+	free(certFile);
+	free(keyFile);
+	free(rootCAFile);
 
 	if (NONE_ERROR != rc) {
 		ERROR("Shadow Connection Error %d", rc);
@@ -264,6 +257,8 @@ int main(int argc, char** argv) {
 	}
 
 	close(s);
+
+	FreeCommandLineArgTemplateResources(argTemplates, sizeof(argTemplates)/sizeof(argTemplates[0]));
 
 	return rc;
 }

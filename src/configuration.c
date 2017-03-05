@@ -61,10 +61,12 @@ static void AddArgsFromConfigFile(CommandLineArg **parsedArgs, const char *confi
 	free(line);
 }
 
-void FreeCommandLineArgTemplateResources(CommandLineArgTemplate *template)
+void FreeCommandLineArgTemplateResources(CommandLineArgTemplate *templates[], int templatesCount)
 {
-	if (template && template->value) {
-		free(template->value);
+	for (int i = 0; i < templatesCount; ++i) {
+		if (templates[i]->value) {
+			free(templates[i]->value);
+		}
 	}
 }
 
