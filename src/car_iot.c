@@ -90,7 +90,7 @@
 #include "aws_iot_config.h"
 #include "aws_iot_mqtt_interface.h"
 
-#include "configuration.h"
+#include "EasyArgs.h"
 #include "OBDII.h"
 #include "OBDIICommunication.h"
 
@@ -121,10 +121,17 @@ int main(int argc, char** argv) {
 	CommandLineArgTemplate rootCertOption = CreateArgTemplate("r", "rootcert", 1, 1, "AWS root CA file");
 	CommandLineArgTemplate transferIDOption = CreateArgTemplate("tx", "transfer-id", 1, 1, "The CAN ID that will be used for sending the diagnostic requests. For 11-bit identifiers, t      his can be either the broadcast ID, 0x7DF, or an ID in the range 0x7E0 to 0x7E7, indicating a particular ECU.");
 	CommandLineArgTemplate receiveIDOption = CreateArgTemplate("rx", "receive-id", 1, 1, "The CAN ID that the ECU will be using to respond to the diagnostic       requests that are sent. For 11-bit identifiers, this is an ID in the range 0x7E8 to 0x7EF (i.e. <transfer CAN ID> + 8)");
+	CommandLineArgTemplate configOption = CreateArgTemplate("f", "configFile", 0, 1, "Configuration file");
 
-	CommandLineArgTemplate *argTemplates[] = { &endpointURLOption, &thingNameOption, &portOption, &certOption, &privateKeyOption, &rootCertOption, &transferIDOption, &receiveIDOption };
+	CommandLineArgTemplate *argTemplates[] = { &endpointURLOption, &thingNameOption, &portOption, &certOption, &privateKeyOption, &rootCertOption, &transferIDOption, &receiveIDOption, &configOption };
 
-	int nextArgIndex = ParseCommandLineArgs(argc, argv, argTemplates, sizeof(argTemplates)/sizeof(argTemplates[0]), "config", "config");
+	int nextArgIndex; 
+	char *outError;
+	if ((nextArgIndex = ParseCommandLineArgs(argc, argv, argTemplates, sizeof(argTemplates)/sizeof(argTemplates[0]), &configOption, "config", &outError)) < 0) {
+		printf("Error: %s\n", outError);
+		free(outError);
+		exit(EXIT_FAILURE);
+	}
 
 	if (nextArgIndex != argc - 1) {
 		PrintUsage(basename(argv[0]));
