@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
     	}
 
     	addr.can_family = AF_CAN;
-    	addr.can_ifindex = if_nametoindex(argv[optind]);
+    	addr.can_ifindex = if_nametoindex(argv[nextArgIndex]);
 
     	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		perror("bind");
