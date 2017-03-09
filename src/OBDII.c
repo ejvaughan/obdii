@@ -1,6 +1,35 @@
 #include <stdlib.h>
 #include <string.h>
 #include "OBDII.h"
+#include "OBDII_Private.h"
+
+int OBDIICommandSetContainsCommand(OBDIICommandSet *commandSet, OBDIICommand *command)
+{
+	if (!commandSet || !command) {
+		return 0;
+	}
+	
+	char mode = GET_COMMAND_MODE(command);
+	if (mode == 0x01) {
+		char pid = GET_COMMAND_PID(command);
+
+		if (pid <= 0x20) {
+			return !!(commandSet->_mode1SupportedPIDs._0_to_20 & (1 << pid));
+		} else if (pid <= 0x40) {
+			return !!(commandSet->_mode1SupportedPIDs._21_to_40 & (1 << (pid - 0x21)));
+		} else if (pid <= 0x60) {
+			return !!(commandSet->_mode1SupportedPIDs._41_to_60 & (1 << (pid - 0x41)));
+		} else {
+			return !!(commandSet->_mode1SupportedPIDs._61_to_80 & (1 << (pid - 0x61)));
+		}
+	} else if (mode == 0x09) {
+		char pid = GET_COMMAND_PID(command);
+
+		return !!(commandSet->_mode9SupportedPIDs & (1 << pid));
+	}
+
+	return 0;
+}
 
 int OBDIIResponseSuccessful(OBDIICommand *command, unsigned char *payload, int len)
 {
@@ -14,7 +43,7 @@ int OBDIIResponseSuccessful(OBDIICommand *command, unsigned char *payload, int l
 	}
 
 	// A successful response adds 0x40 to the mode byte
-	char mode = command->payload[0];
+	char mode = GET_COMMAND_MODE(command);
 	if (payload[0] != mode + 0x40) {
 		return 0;
 	}

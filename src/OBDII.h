@@ -27,8 +27,30 @@ typedef struct OBDIICommand {
 	OBDIIResponseDecoder responseDecoder;
 } OBDIICommand;
 
+typedef struct OBDIICommandSet {
+	// Private
+	struct {
+		int _0_to_20;
+		int _21_to_40;
+		int _41_to_60;
+		int _61_to_80;
+	} _mode1SupportedPIDs;
+
+	int _mode9SupportedPIDs;
+
+	int numCommands;
+	OBDIICommand **commands;
+} OBDIICommandSet;
+
 struct OBDIICommands {
-	OBDIICommand supportedPIDs_0_to_20;
+	// Private
+	OBDIICommand mode1SupportedPIDs_0_to_20;
+	OBDIICommand mode1SupportedPIDs_21_to_40;
+	OBDIICommand mode1SupportedPIDs_41_to_60;
+	OBDIICommand mode1SupportedPIDs_61_to_80;
+	OBDIICommand mode9SupportedPIDs;
+
+	// Public
 	OBDIICommand monitorStatus;
 	OBDIICommand freezeDTC;
 	OBDIICommand fuelSystemStatus;
@@ -53,5 +75,7 @@ extern struct OBDIICommands OBDIICommands;
 
 OBDIIResponse OBDIIDecodeResponseForCommand(OBDIICommand *command, unsigned char *responsePayload, int len);
 void OBDIIResponseFree(OBDIIResponse *response);
+
+int OBDIICommandSetContainsCommand(OBDIICommandSet *commandSet, OBDIICommand *command);
 
 #endif /* OBDII.h */

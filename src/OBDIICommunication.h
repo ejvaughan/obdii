@@ -5,4 +5,6 @@
 
 OBDIIResponse OBDIIPerformQuery(int socket, OBDIICommand *command);
 
+OBDIICommandSet OBDIIGetSupportedCommands(int socket);
+
 #endif /* OBDIICommunication.h */

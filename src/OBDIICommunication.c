@@ -2,6 +2,11 @@
 
 #define MAX_ISOTP_PAYLOAD 4095
 
+OBDIICommandSet OBDIIGetSupportedCommands(int socket)
+{
+	
+}
+
 OBDIIResponse OBDIIPerformQuery(int socket, OBDIICommand *command)
 {
 		OBDIIResponse response = { 0 };
