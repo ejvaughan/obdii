@@ -2,26 +2,26 @@
 #include <string.h>
 #include "OBDII.h"
 
-int OBDIIResponseSuccessful(OBDIICommand command, unsigned char *payload, int len)
+int OBDIIResponseSuccessful(OBDIICommand *command, unsigned char *payload, int len)
 {
-	if (len <= 0) {
+	if (!command || !payload || len <= 0) {
 		return 0;
 	}
 
 	// For responses whose length we can anticipate, make sure the actual length matches
-	if (command.expectedResponseLength != 0 && len != command.expectedResponseLength) {
+	if (command->expectedResponseLength != VARIABLE_RESPONSE_LENGTH && len != command->expectedResponseLength) {
 		return 0;
 	}
 
-	// A successful reseponse adds 0x40 to the mode byte
-	char mode = command.payload[0];
+	// A successful response adds 0x40 to the mode byte
+	char mode = command->payload[0];
 	if (payload[0] != mode + 0x40) {
 		return 0;
 	}
 
 	// PIDs should match
 	if (mode == 0x01 || mode == 0x09) {
-		if (len < 2 || payload[1] != command.payload[1]) {
+		if (len < 2 || payload[1] != command->payload[1]) {
 			return 0;
 		}
 	}
@@ -86,8 +86,8 @@ void OBDIIDecodeDTCs(OBDIIResponse *response, unsigned char *responsePayload, in
 	}
 
 	int numDTCs = numBytes / bytesPerDTC;
-	response->DTCs = malloc(numDTCs * sizeof(*response->DTCs));
-	response->numDTCs = numDTCs;
+	response->DTCs.troubleCodes = malloc(numDTCs * sizeof(*response->DTCs.troubleCodes));
+	response->DTCs.numTroubleCodes = numDTCs;
 
 	int i;
 	for (i = 0; i < numDTCs; i++) {
@@ -95,7 +95,7 @@ void OBDIIDecodeDTCs(OBDIIResponse *response, unsigned char *responsePayload, in
 		unsigned char a = responsePayload[offset];
 		unsigned char b = responsePayload[offset + 1];
 
-		char *DTC = response->DTCs[i];
+		char *DTC = response->DTCs.troubleCodes[i];
 
 		// Fill in the DTC characters
 		unsigned char rawFirstCharacter = a >> 6;
@@ -129,25 +129,33 @@ void OBDIIDecodeVIN(OBDIIResponse *response, unsigned char *responsePayload, int
 	}
 }
 
-OBDIIResponse OBDIIDecodeResponseForCommand(OBDIICommand command, unsigned char *payload, int len)
+OBDIIResponse OBDIIDecodeResponseForCommand(OBDIICommand *command, unsigned char *payload, int len)
 {
 	OBDIIResponse response = { 0 };
 
+	if (!command || !payload || len <= 0) {
+		return response;
+	}
+
 	if ((response.success = OBDIIResponseSuccessful(command, payload, len))) {
-		command.responseDecoder(&response, payload, len);
+		command->responseDecoder(&response, payload, len);
 	}
 
 	return response;
 }
 
-void OBDIIResponseFree(OBDIIResponse response)
+void OBDIIResponseFree(OBDIIResponse *response)
 {
-	if (response.DTCs != NULL) {
-		free(response.DTCs);
+	if (!response) {
+		return;
 	}
 
-	if (response.stringValue != NULL) {
-		free(response.stringValue);
+	if (response->DTCs.troubleCodes != NULL) {
+		free(response->DTCs.troubleCodes);
+	}
+
+	if (response->stringValue != NULL) {
+		free(response->stringValue);
 	}
 }
 
@@ -168,6 +176,6 @@ struct OBDIICommands OBDIICommands = {
 	{ "Vehicle speed", { 0x01, 0x0D }, 3, &OBDIIDecodeVehicleSpeed },
 	{ "Timing advance", { 0x01, 0x0E }, 3, &OBDIIDecodeTimingAdvance },
 	{ "Intake air temperature", { 0x01, 0x0F }, 3, &OBDIIDecodeTemperature },
-	{ "Get DTCs", { 0x03 }, 0, &OBDIIDecodeDTCs },
-	{ "Get VIN", { 0x09, 0x02 }, 0, &OBDIIDecodeVIN }
+	{ "Get DTCs", { 0x03 }, VARIABLE_RESPONSE_LENGTH, &OBDIIDecodeDTCs },
+	{ "Get VIN", { 0x09, 0x02 }, VARIABLE_RESPONSE_LENGTH, &OBDIIDecodeVIN }
 };

@@ -136,19 +136,19 @@ int main(int argc, char **argv)
 
     // OBDIIResponseFree(dtcResponse);
 
-    OBDIIResponse dtcResponse = OBDIIPerformQuery(s, OBDIICommands.VIN);
+    OBDIIResponse dtcResponse = OBDIIPerformQuery(s, &OBDIICommands.VIN);
     printf("VIN: %s\n", dtcResponse.stringValue);
-    OBDIIResponseFree(dtcResponse);
+    OBDIIResponseFree(&dtcResponse);
 
     while (1) {
 	    // Send a request for the engine RPMs
-	    OBDIIResponse response = OBDIIPerformQuery(s, OBDIICommands.engineRPMs);
+	    OBDIIResponse response = OBDIIPerformQuery(s, &OBDIICommands.engineRPMs);
 	    printf("Engine RPMs: %f\n", response.floatValue);
 
-	    response = OBDIIPerformQuery(s, OBDIICommands.engineCoolantTemperature);
+	    response = OBDIIPerformQuery(s, &OBDIICommands.engineCoolantTemperature);
 	    printf("Engine coolant temperature (Celsius): %i\n", response.floatValue);
 
-	    response = OBDIIPerformQuery(s, OBDIICommands.calculatedEngineLoad);
+	    response = OBDIIPerformQuery(s, &OBDIICommands.calculatedEngineLoad);
 	    printf("Calculated engine load: %f\n", response.floatValue);
 
 	    sleep(1);

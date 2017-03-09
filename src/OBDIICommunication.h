@@ -3,6 +3,6 @@
 
 #include "OBDII.h"
 
-OBDIIResponse OBDIIPerformQuery(int socket, OBDIICommand command);
+OBDIIResponse OBDIIPerformQuery(int socket, OBDIICommand *command);
 
 #endif /* OBDIICommunication.h */

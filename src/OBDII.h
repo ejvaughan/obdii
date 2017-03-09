@@ -1,6 +1,8 @@
 #ifndef __OBDII_H
 #define __OBDII_H
 
+#define VARIABLE_RESPONSE_LENGTH 0
+
 typedef struct OBDIIResponse {
 	int success;
 
@@ -8,10 +10,11 @@ typedef struct OBDIIResponse {
 		float floatValue;
 		unsigned int bitfieldValue;
 		char *stringValue; // for VIN or ECU name
+		struct {
+			char (*troubleCodes)[6];
+			int numTroubleCodes;
+		} DTCs;
 	};
-
-	char (*DTCs)[6];
-	int numDTCs;
 } OBDIIResponse;
 
 struct OBDIICommand;
@@ -48,7 +51,7 @@ struct OBDIICommands {
 
 extern struct OBDIICommands OBDIICommands;
 
-OBDIIResponse OBDIIDecodeResponseForCommand(OBDIICommand command, unsigned char *responsePayload, int len);
-void OBDIIResponseFree(OBDIIResponse response);
+OBDIIResponse OBDIIDecodeResponseForCommand(OBDIICommand *command, unsigned char *responsePayload, int len);
+void OBDIIResponseFree(OBDIIResponse *response);
 
 #endif /* OBDII.h */
