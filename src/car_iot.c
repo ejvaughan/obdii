@@ -234,7 +234,7 @@ int main(int argc, char** argv) {
 
 		// Get engine RPMs
 	    	OBDIIResponse response = OBDIIPerformQuery(s, &OBDIICommands.engineRPMs);
-		engineRPMs = response.floatValue;
+		engineRPMs = response.numericValue;
 
 		rc = aws_iot_shadow_init_json_document(JsonDocumentBuffer, sizeOfJsonDocumentBuffer);
 		if (rc == NONE_ERROR) {

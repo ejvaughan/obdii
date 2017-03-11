@@ -65,42 +65,42 @@ void OBDIIDecodeSupportedPIDs(OBDIIResponse *response, unsigned char *responsePa
 
 void OBDIIDecodeEngineRPMs(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
-	response->floatValue = (256.0 * responsePayload[2] + responsePayload[3]) / 4.0;
+	response->numericValue = (256.0 * responsePayload[2] + responsePayload[3]) / 4.0;
 }
 
 void OBDIIDecodeVehicleSpeed(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
-	response->floatValue = responsePayload[2];
+	response->numericValue = responsePayload[2];
 }
 
 void OBDIIDecodeTimingAdvance(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
-	response->floatValue = (responsePayload[2] / 2.0) - 64;
+	response->numericValue = (responsePayload[2] / 2.0) - 64;
 }
 
 void OBDIIDecodeTemperature(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
-	response->floatValue = responsePayload[2] - 40;
+	response->numericValue = responsePayload[2] - 40;
 }
 
 void OBDIIDecodeCalculatedEngineLoad(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
-	response->floatValue = responsePayload[2] / 2.55;
+	response->numericValue = responsePayload[2] / 2.55;
 }
 
 void OBDIIDecodeFuelTrim(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
-	response->floatValue = responsePayload[2] / 1.28 - 100;
+	response->numericValue = responsePayload[2] / 1.28 - 100;
 }
 
 void OBDIIDecodeFuelPressure(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
-	response->floatValue = 3 * responsePayload[2];
+	response->numericValue = 3 * responsePayload[2];
 }
 
 void OBDIIDecodeIntakeManifoldPressure(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
-	response->floatValue = responsePayload[2];
+	response->numericValue = responsePayload[2];
 }
 
 void OBDIIDecodeDTCs(OBDIIResponse *response, unsigned char *responsePayload, int len)
@@ -158,6 +158,27 @@ void OBDIIDecodeVIN(OBDIIResponse *response, unsigned char *responsePayload, int
 	}
 }
 
+void OBDIIDecodeOxygenSensorValues(OBDIIResponse *response, unsigned char *responsePayload, int payloadLen) {
+	response->oxygenSensorValues.voltage = responsePayload[2] / 200.0;
+	response->oxygenSensorValues.shortTermFuelTrim = (100.0 / 128.0) * responsePayload[3] - 100.0;
+}
+
+void OBDIIDecodeOxygenSensorsPresent(OBDIIResponse *response, unsigned char *responsePayload, int payloadLen) {
+	response->bitfieldValue = responsePayload[2];
+}
+
+void OBDIIDecodeThrottlePosition(OBDIIResponse *response, unsigned char *responsePayload, int payloadLen) {
+	response->numericValue = (100.0 / 255.0) * responsePayload[2];
+}
+
+void OBDIIDecodeMAFAirFlowRate(OBDIIResponse *response, unsigned char *responsePayload, int payloadLen) {
+	response->numericValue = (256.0 * responsePayload[2] + responsePayload[3]) / 100.0;
+}
+
+void OBDIIDecodeCommandedSecondaryAirStatus(OBDIIResponse *response, unsigned char *responsePayload, int payloadLen) {
+	response->bitfieldValue = responsePayload[2];
+}
+
 OBDIIResponse OBDIIDecodeResponseForCommand(OBDIICommand *command, unsigned char *payload, int len)
 {
 	OBDIIResponse response = { 0 };
@@ -206,6 +227,18 @@ struct OBDIICommands OBDIICommands = {
 	{ "Vehicle speed", { 0x01, 0x0D }, 3, &OBDIIDecodeVehicleSpeed },
 	{ "Timing advance", { 0x01, 0x0E }, 3, &OBDIIDecodeTimingAdvance },
 	{ "Intake air temperature", { 0x01, 0x0F }, 3, &OBDIIDecodeTemperature },
+	{ "MAF air flow rate", { 0x01, 0x10 }, 4, &OBDIIDecodeMAFAirFlowRate },
+	{ "Throttle position", { 0x01, 0x11 }, 3, &OBDIIDecodeThrottlePosition },
+	{ "Commanded secondary air status", { 0x01, 0x12 }, 3, &OBDIIDecodeCommandedSecondaryAirStatus },
+	{ "Oxygen sensors present", { 0x01, 0x13 }, 3, &OBDIIDecodeOxygenSensorsPresent },
+	{ "Oxygen sensor 1", { 0x01, 0x14 }, 4, &OBDIIDecodeOxygenSensorValues },
+	{ "Oxygen sensor 2", { 0x01, 0x15 }, 4, &OBDIIDecodeOxygenSensorValues },
+	{ "Oxygen sensor 3", { 0x01, 0x16 }, 4, &OBDIIDecodeOxygenSensorValues },
+	{ "Oxygen sensor 4", { 0x01, 0x17 }, 4, &OBDIIDecodeOxygenSensorValues },
+	{ "Oxygen sensor 5", { 0x01, 0x18 }, 4, &OBDIIDecodeOxygenSensorValues },
+	{ "Oxygen sensor 6", { 0x01, 0x19 }, 4, &OBDIIDecodeOxygenSensorValues },
+	{ "Oxygen sensor 7", { 0x01, 0x1A }, 4, &OBDIIDecodeOxygenSensorValues },
+	{ "Oxygen sensor 8", { 0x01, 0x1B }, 4, &OBDIIDecodeOxygenSensorValues },
 	{ "Supported PIDs in the range 21 - 40", { 0x01, 0x20 }, 6, &OBDIIDecodeSupportedPIDs },
 	{ "Supported PIDs in the range 41 - 60", { 0x01, 0x40 }, 6, &OBDIIDecodeSupportedPIDs },
 	{ "Supported PIDs in the range 61 - 80", { 0x01, 0x60 }, 6, &OBDIIDecodeSupportedPIDs },

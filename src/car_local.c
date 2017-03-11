@@ -143,13 +143,13 @@ int main(int argc, char **argv)
     while (1) {
 	    // Send a request for the engine RPMs
 	    OBDIIResponse response = OBDIIPerformQuery(s, &OBDIICommands.engineRPMs);
-	    printf("Engine RPMs: %f\n", response.floatValue);
+	    printf("Engine RPMs: %f\n", response.numericValue);
 
 	    response = OBDIIPerformQuery(s, &OBDIICommands.engineCoolantTemperature);
-	    printf("Engine coolant temperature (Celsius): %i\n", response.floatValue);
+	    printf("Engine coolant temperature (Celsius): %i\n", response.numericValue);
 
 	    response = OBDIIPerformQuery(s, &OBDIICommands.calculatedEngineLoad);
-	    printf("Calculated engine load: %f\n", response.floatValue);
+	    printf("Calculated engine load: %f\n", response.numericValue);
 
 	    sleep(1);
    }

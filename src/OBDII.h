@@ -7,13 +7,17 @@ typedef struct OBDIIResponse {
 	int success;
 
 	union {
-		float floatValue;
+		float numericValue;
 		unsigned int bitfieldValue;
 		char *stringValue; // for VIN or ECU name
 		struct {
 			char (*troubleCodes)[6];
 			int numTroubleCodes;
 		} DTCs;
+		struct {
+			float voltage;
+			float shortTermFuelTrim;
+		} oxygenSensorValues;
 	};
 } OBDIIResponse;
 
@@ -57,6 +61,18 @@ struct OBDIICommands {
 	OBDIICommand vehicleSpeed;			// km/h
 	OBDIICommand timingAdvance;			// Degrees before TDC
 	OBDIICommand intakeAirTemperature;		// Celsius
+	OBDIICommand mafAirFlowRate;
+	OBDIICommand throttlePosition;
+	OBDIICommand oxygenSensorsPresent;
+	OBDIICommand oxygenSensor1;
+	OBDIICommand oxygenSensor2;
+	OBDIICommand oxygenSensor3;
+	OBDIICommand oxygenSensor4;
+	OBDIICommand oxygenSensor5;
+	OBDIICommand oxygenSensor6;
+	OBDIICommand oxygenSensor7;
+	OBDIICommand oxygenSensor8;
+
 	OBDIICommand mode1SupportedPIDs_21_to_40;
 	OBDIICommand mode1SupportedPIDs_41_to_60;
 	OBDIICommand mode1SupportedPIDs_61_to_80;
