@@ -37,20 +37,11 @@ typedef struct OBDIICommandSet {
 	} _mode1SupportedPIDs;
 
 	int _mode9SupportedPIDs;
-
-	int numCommands;
-	OBDIICommand **commands;
 } OBDIICommandSet;
 
 struct OBDIICommands {
-	// Private
+	// Mode 1
 	OBDIICommand mode1SupportedPIDs_0_to_20;
-	OBDIICommand mode1SupportedPIDs_21_to_40;
-	OBDIICommand mode1SupportedPIDs_41_to_60;
-	OBDIICommand mode1SupportedPIDs_61_to_80;
-	OBDIICommand mode9SupportedPIDs;
-
-	// Public
 	OBDIICommand monitorStatus;
 	OBDIICommand freezeDTC;
 	OBDIICommand fuelSystemStatus;
@@ -66,7 +57,16 @@ struct OBDIICommands {
 	OBDIICommand vehicleSpeed;			// km/h
 	OBDIICommand timingAdvance;			// Degrees before TDC
 	OBDIICommand intakeAirTemperature;		// Celsius
+	OBDIICommand mode1SupportedPIDs_21_to_40;
+	OBDIICommand mode1SupportedPIDs_41_to_60;
+	OBDIICommand mode1SupportedPIDs_61_to_80;
+	
+	// Mode 3
 	OBDIICommand DTCs;
+
+	// Mode 9
+	OBDIICommand mode9SupportedPIDs;
+	OBDIICommand vinMessageCount;
 	OBDIICommand VIN;
 	OBDIICommand ECUName;
 };

@@ -189,6 +189,7 @@ void OBDIIResponseFree(OBDIIResponse *response)
 }
 
 struct OBDIICommands OBDIICommands = {
+	// Mode 1
 	{ "Supported PIDs in the range 01 - 20", { 0x01, 0x00 }, 6, &OBDIIDecodeSupportedPIDs },
 	{ "Monitor status since DTCs cleared", { 0x01, 0x01 }, 6, NULL },
 	{ "Freeze DTC", { 0x01, 0x02 }, 4, NULL },
@@ -205,6 +206,15 @@ struct OBDIICommands OBDIICommands = {
 	{ "Vehicle speed", { 0x01, 0x0D }, 3, &OBDIIDecodeVehicleSpeed },
 	{ "Timing advance", { 0x01, 0x0E }, 3, &OBDIIDecodeTimingAdvance },
 	{ "Intake air temperature", { 0x01, 0x0F }, 3, &OBDIIDecodeTemperature },
+	{ "Supported PIDs in the range 21 - 40", { 0x01, 0x20 }, 6, &OBDIIDecodeSupportedPIDs },
+	{ "Supported PIDs in the range 41 - 60", { 0x01, 0x40 }, 6, &OBDIIDecodeSupportedPIDs },
+	{ "Supported PIDs in the range 61 - 80", { 0x01, 0x60 }, 6, &OBDIIDecodeSupportedPIDs },
+
+	// Mode 3
 	{ "Get DTCs", { 0x03 }, VARIABLE_RESPONSE_LENGTH, &OBDIIDecodeDTCs },
+
+	// Mode 9
+	{ "Supported PIDs", { 0x09, 0x00 }, 6, &OBDIIDecodeSupportedPIDs },
+	{ "VIN message count", { 0x09, 0x01 }, 3, NULL },
 	{ "Get VIN", { 0x09, 0x02 }, VARIABLE_RESPONSE_LENGTH, &OBDIIDecodeVIN }
 };

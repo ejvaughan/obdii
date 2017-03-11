@@ -4,7 +4,46 @@
 
 OBDIICommandSet OBDIIGetSupportedCommands(int socket)
 {
-	
+	OBDIICommandSet supportedCommands = { 0 };
+
+	// Mode 1
+	OBDIIResponse response = OBDIIPerformQuery(socket, &OBDIICommands.mode1SupportedPIDs_0_to_20);
+
+	supportedCommands._mode1SupportedPIDs._0_to_20 = response.bitfieldValue;
+
+	// If PID 0x20 is supported, we can query the next set of PIDs
+	if (!(response.bitfieldValue & 0x01)) {
+		return supportedCommands;
+	}
+
+	response = OBDIIPerformQuery(socket, &OBDIICommands.mode1SupportedPIDs_21_to_40);
+
+	supportedCommands._mode1SupportedPIDs._21_to_40 = response.bitfieldValue;
+
+	// If PID 0x40 is supported, we can query the next set of PIDs
+	if (!(response.bitfieldValue & 0x01)) {
+		return supportedCommands;
+	}
+
+	response = OBDIIPerformQuery(socket, &OBDIICommands.mode1SupportedPIDs_41_to_60);
+
+	supportedCommands._mode1SupportedPIDs._41_to_60 = response.bitfieldValue;
+
+	// If PID 0x60 is supported, we can query the next set of commands
+	if (!(response.bitfieldValue & 0x01)) {
+		return supportedCommands;
+	}
+
+	response = OBDIIPerformQuery(socket, &OBDIICommands.mode1SupportedPIDs_61_to_80);
+
+	supportedCommands._mode1SupportedPIDs._61_to_80 = response.bitfieldValue;
+
+	// Mode 9
+	response = OBDIIPerformQuery(socket, &OBDIICommands.mode9SupportedPIDs);
+
+	supportedCommands._mode9SupportedPIDs = response.bitfieldValue;
+
+	return supportedCommands;
 }
 
 OBDIIResponse OBDIIPerformQuery(int socket, OBDIICommand *command)
