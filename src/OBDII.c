@@ -163,10 +163,6 @@ void OBDIIDecodeOxygenSensorValues(OBDIIResponse *response, unsigned char *respo
 	response->oxygenSensorValues.shortTermFuelTrim = (100.0 / 128.0) * responsePayload[3] - 100.0;
 }
 
-void OBDIIDecodeOxygenSensorsPresent(OBDIIResponse *response, unsigned char *responsePayload, int payloadLen) {
-	response->bitfieldValue = responsePayload[2];
-}
-
 void OBDIIDecodeThrottlePosition(OBDIIResponse *response, unsigned char *responsePayload, int payloadLen) {
 	response->numericValue = (100.0 / 255.0) * responsePayload[2];
 }
@@ -175,8 +171,13 @@ void OBDIIDecodeMAFAirFlowRate(OBDIIResponse *response, unsigned char *responseP
 	response->numericValue = (256.0 * responsePayload[2] + responsePayload[3]) / 100.0;
 }
 
-void OBDIIDecodeCommandedSecondaryAirStatus(OBDIIResponse *response, unsigned char *responsePayload, int payloadLen) {
+void OBDIIDecodeSingleByteBitfield(OBDIIResponse *response, unsigned char *responsePayload, int payloadLen) {
 	response->bitfieldValue = responsePayload[2];
+}
+
+void OBDIIDecodeRuntime(OBDIIResponse *response, unsigned char *responsePayload, int payloadLen)
+{
+	response->numericValue = 256 * responsePayload[2] + responsePayload[3];
 }
 
 OBDIIResponse OBDIIDecodeResponseForCommand(OBDIICommand *command, unsigned char *payload, int len)
@@ -229,8 +230,8 @@ struct OBDIICommands OBDIICommands = {
 	{ "Intake air temperature", { 0x01, 0x0F }, 3, &OBDIIDecodeTemperature },
 	{ "MAF air flow rate", { 0x01, 0x10 }, 4, &OBDIIDecodeMAFAirFlowRate },
 	{ "Throttle position", { 0x01, 0x11 }, 3, &OBDIIDecodeThrottlePosition },
-	{ "Commanded secondary air status", { 0x01, 0x12 }, 3, &OBDIIDecodeCommandedSecondaryAirStatus },
-	{ "Oxygen sensors present", { 0x01, 0x13 }, 3, &OBDIIDecodeOxygenSensorsPresent },
+	{ "Commanded secondary air status", { 0x01, 0x12 }, 3, &OBDIIDecodeSingleByteBitfield },
+	{ "Oxygen sensors present", { 0x01, 0x13 }, 3, &OBDIIDecodeSingleByteBitfield },
 	{ "Oxygen sensor 1", { 0x01, 0x14 }, 4, &OBDIIDecodeOxygenSensorValues },
 	{ "Oxygen sensor 2", { 0x01, 0x15 }, 4, &OBDIIDecodeOxygenSensorValues },
 	{ "Oxygen sensor 3", { 0x01, 0x16 }, 4, &OBDIIDecodeOxygenSensorValues },
@@ -239,6 +240,10 @@ struct OBDIICommands OBDIICommands = {
 	{ "Oxygen sensor 6", { 0x01, 0x19 }, 4, &OBDIIDecodeOxygenSensorValues },
 	{ "Oxygen sensor 7", { 0x01, 0x1A }, 4, &OBDIIDecodeOxygenSensorValues },
 	{ "Oxygen sensor 8", { 0x01, 0x1B }, 4, &OBDIIDecodeOxygenSensorValues },
+	{ "OBD standards this vehicle conforms to", { 0x01, 0x1C }, 3, &OBDIIDecodeSingleByteBitfield },
+	{ "Oxygen sensors present in 4 banks", { 0x01, 0x1D }, 3, &OBDIIDecodeSingleByteBitfield },
+	{ "Auxiliary input status", { 0x01, 0x1E }, 3, &OBDIIDecodeSingleByteBitfield },
+	{ "Run time since engine start", { 0x01, 0x1F }, 4, &OBDIIDecodeRuntime },
 	{ "Supported PIDs in the range 21 - 40", { 0x01, 0x20 }, 6, &OBDIIDecodeSupportedPIDs },
 	{ "Supported PIDs in the range 41 - 60", { 0x01, 0x40 }, 6, &OBDIIDecodeSupportedPIDs },
 	{ "Supported PIDs in the range 61 - 80", { 0x01, 0x60 }, 6, &OBDIIDecodeSupportedPIDs },

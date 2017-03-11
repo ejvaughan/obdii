@@ -63,7 +63,7 @@ struct OBDIICommands {
 	OBDIICommand intakeAirTemperature;		// Celsius
 	OBDIICommand mafAirFlowRate;
 	OBDIICommand throttlePosition;
-	OBDIICommand oxygenSensorsPresent;
+	OBDIICommand oxygenSensorsPresentIn2Banks;
 	OBDIICommand oxygenSensor1;
 	OBDIICommand oxygenSensor2;
 	OBDIICommand oxygenSensor3;
@@ -72,7 +72,10 @@ struct OBDIICommands {
 	OBDIICommand oxygenSensor6;
 	OBDIICommand oxygenSensor7;
 	OBDIICommand oxygenSensor8;
-
+	OBDIICommand conformingStandards;
+	OBDIICommand oxygenSensorsPresentIn4Banks;
+	OBDIICommand auxiliaryInputStatus;
+	OBDIICommand runtimeSinceEngineStart;
 	OBDIICommand mode1SupportedPIDs_21_to_40;
 	OBDIICommand mode1SupportedPIDs_41_to_60;
 	OBDIICommand mode1SupportedPIDs_61_to_80;
