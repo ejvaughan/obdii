@@ -1,4 +1,6 @@
 #include "OBDIICommunication.h"
+#include <stdlib.h>
+#include <sys/select.h>
 
 #define MAX_ISOTP_PAYLOAD 4095
 
@@ -54,6 +56,20 @@ OBDIIResponse OBDIIPerformQuery(int socket, OBDIICommand *command)
 	    int retval = write(socket, command->payload, sizeof(command->payload));
 	    if (retval < 0 || retval != sizeof(command->payload)) {
 			return response;
+	    }
+
+	    // Set a two second timeout
+	    struct timeval timeout;
+	    timeout.tv_sec = 2;
+	    timeout.tv_usec = 0;
+
+	    fd_set readFDs;
+	    FD_ZERO(&readFDs);
+	    FD_SET(socket, &readFDs);
+
+	    if (select(socket + 1, &readFDs, NULL, NULL, &timeout) <= 0) {
+		// Either we timed out, or there was an error
+		return response;
 	    }
 
 	    // Receive the response
