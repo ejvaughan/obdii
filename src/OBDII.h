@@ -15,8 +15,14 @@ typedef struct OBDIIResponse {
 			int numTroubleCodes;
 		} DTCs;
 		struct {
-			float voltage;
-			float shortTermFuelTrim;
+			union {
+				float voltage;
+				float current;
+			};
+			union {
+				float shortTermFuelTrim;
+				float fuelAirEquivalenceRatio;
+			};
 		} oxygenSensorValues;
 	};
 } OBDIIResponse;
@@ -61,23 +67,68 @@ struct OBDIICommands {
 	OBDIICommand vehicleSpeed;			// km/h
 	OBDIICommand timingAdvance;			// Degrees before TDC
 	OBDIICommand intakeAirTemperature;		// Celsius
-	OBDIICommand mafAirFlowRate;
-	OBDIICommand throttlePosition;
+	OBDIICommand mafAirFlowRate;			// grams/sec
+	OBDIICommand throttlePosition;			// Percentage
 	OBDIICommand oxygenSensorsPresentIn2Banks;
-	OBDIICommand oxygenSensor1;
-	OBDIICommand oxygenSensor2;
-	OBDIICommand oxygenSensor3;
-	OBDIICommand oxygenSensor4;
-	OBDIICommand oxygenSensor5;
-	OBDIICommand oxygenSensor6;
-	OBDIICommand oxygenSensor7;
-	OBDIICommand oxygenSensor8;
+	OBDIICommand oxygenSensor1_fuelTrim;
+	OBDIICommand oxygenSensor2_fuelTrim;
+	OBDIICommand oxygenSensor3_fuelTrim;
+	OBDIICommand oxygenSensor4_fuelTrim;
+	OBDIICommand oxygenSensor5_fuelTrim;
+	OBDIICommand oxygenSensor6_fuelTrim;
+	OBDIICommand oxygenSensor7_fuelTrim;
+	OBDIICommand oxygenSensor8_fuelTrim;
 	OBDIICommand conformingStandards;
 	OBDIICommand oxygenSensorsPresentIn4Banks;
 	OBDIICommand auxiliaryInputStatus;
-	OBDIICommand runtimeSinceEngineStart;
+	OBDIICommand runtimeSinceEngineStart;		// seconds
 	OBDIICommand mode1SupportedPIDs_21_to_40;
+	OBDIICommand distanceTraveledWithMalfunctionIndicatorLampOn;	// km
+	OBDIICommand fuelRailPressure;			// kPA
+	OBDIICommand fuelRailGaugePressure; 		// kPA
+	OBDIICommand oxygenSensor1_fuelAirRatioVoltage;
+	OBDIICommand oxygenSensor2_fuelAirRatioVoltage;
+	OBDIICommand oxygenSensor3_fuelAirRatioVoltage;
+	OBDIICommand oxygenSensor4_fuelAirRatioVoltage;
+	OBDIICommand oxygenSensor5_fuelAirRatioVoltage;
+	OBDIICommand oxygenSensor6_fuelAirRatioVoltage;
+	OBDIICommand oxygenSensor7_fuelAirRatioVoltage;
+	OBDIICommand oxygenSensor8_fuelAirRatioVoltage;
+	OBDIICommand commandedEGR;			// Percentage
+	OBDIICommand egrError;				// Percentage
+	OBDIICommand commandedEvaporativePurge; 	// Percentage
+	OBDIICommand fuelTankLevelInput;		// Percentage
+	OBDIICommand warmUpsSinceCodesCleared;
+	OBDIICommand distanceTraveledSinceCodesCleared; // km
+	OBDIICommand evaporativeSystemVaporPressure; 	// Pa
+	OBDIICommand absoluteBarometricPressure; 	// kPa
+	OBDIICommand oxygenSensor1_fuelAirRatioCurrent;	// current in mA
+	OBDIICommand oxygenSensor2_fuelAirRatioCurrent;
+	OBDIICommand oxygenSensor3_fuelAirRatioCurrent;
+	OBDIICommand oxygenSensor4_fuelAirRatioCurrent;
+	OBDIICommand oxygenSensor5_fuelAirRatioCurrent;
+	OBDIICommand oxygenSensor6_fuelAirRatioCurrent;
+	OBDIICommand oxygenSensor7_fuelAirRatioCurrent;
+	OBDIICommand oxygenSensor8_fuelAirRatioCurrent;
+	OBDIICommand catalystTemperatureBank1Sensor1; 	// Celsius
+	OBDIICommand catalystTemperatureBank2Sensor1;	// Celsius
+	OBDIICommand catalystTemperatureBank1Sensor2;	// Celsius
+	OBDIICommand catalystTemperatureBank2Sensor2;	// Celsius
 	OBDIICommand mode1SupportedPIDs_41_to_60;
+	OBDIICommand currentDriveCycleMonitorStatus;
+	OBDIICommand controlModuleVoltage;
+	OBDIICommand absoluteLoadValue;			// Percentage
+	OBDIICommand fuelAirCommandEquivalenceRatio;
+	OBDIICommand relativeThrottlePosition;		// Percentage
+	OBDIICommand ambientAirTemperature;		// Celsius
+	OBDIICommand absoluteThrottlePositionB;		// Percentage
+	OBDIICommand absoluteThrottlePositionC;		// Percentage
+	OBDIICommand acceleratorPedalPositionD;		// Percentage
+	OBDIICommand acceleratorPedalPositionE;		// Percentage
+	OBDIICommand acceleratorPedalPositionF;		// Percentage
+	OBDIICommand commandedThrottleActuator;		// Percentage
+	OBDIICommand timeRunWithMalfunctionIndicatorLampOn;	// minutes
+	OBDIICommand timeSinceTroubleCodesCleared;	// minutes
 	OBDIICommand mode1SupportedPIDs_61_to_80;
 	
 	// Mode 3
