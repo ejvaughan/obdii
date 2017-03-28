@@ -4,48 +4,108 @@
 
 #define MAX_ISOTP_PAYLOAD 4095
 
+// Counts # bits set in the argument
+// Code from Kernighan
+static inline unsigned int _BitsSet(unsigned int word)
+{
+	unsigned int v; // count the number of bits set in v
+	unsigned int c; // c accumulates the total bits set in v
+	for (c = 0; v; c++)
+	{
+	  v &= v - 1; // clear the least significant bit set
+	}
+	return c;
+}
+
 OBDIICommandSet OBDIIGetSupportedCommands(int socket)
 {
 	OBDIICommandSet supportedCommands = { 0 };
+	unsigned int numCommands;
 
 	// Mode 1
-	OBDIIResponse response = OBDIIPerformQuery(socket, &OBDIICommands.mode1SupportedPIDs_0_to_20);
+	OBDIIResponse response = OBDIIPerformQuery(socket, OBDIICommands.mode1SupportedPIDs_1_to_20);
 
-	supportedCommands._mode1SupportedPIDs._0_to_20 = response.bitfieldValue;
+	supportedCommands._mode1SupportedPIDs._1_to_20 = response.bitfieldValue;
 
 	// If PID 0x20 is supported, we can query the next set of PIDs
 	if (!(response.bitfieldValue & 0x01)) {
-		return supportedCommands;
+		goto exit;
 	}
 
-	response = OBDIIPerformQuery(socket, &OBDIICommands.mode1SupportedPIDs_21_to_40);
+	response = OBDIIPerformQuery(socket, OBDIICommands.mode1SupportedPIDs_21_to_40);
 
 	supportedCommands._mode1SupportedPIDs._21_to_40 = response.bitfieldValue;
 
 	// If PID 0x40 is supported, we can query the next set of PIDs
 	if (!(response.bitfieldValue & 0x01)) {
-		return supportedCommands;
+		goto exit;
 	}
 
-	response = OBDIIPerformQuery(socket, &OBDIICommands.mode1SupportedPIDs_41_to_60);
+	response = OBDIIPerformQuery(socket, OBDIICommands.mode1SupportedPIDs_41_to_60);
+
+	// Mask out the rest of the PIDs, because they're not yet implemented
+	response.bitfieldValue &= 0xFFFC0000;
 
 	supportedCommands._mode1SupportedPIDs._41_to_60 = response.bitfieldValue;
 
-	// If PID 0x60 is supported, we can query the next set of commands
-	if (!(response.bitfieldValue & 0x01)) {
-		return supportedCommands;
-	}
+	//// If PID 0x60 is supported, we can query the next set of commands
+	//if (!(response.bitfieldValue & 0x01)) {
+	//	goto exit;
+	//}
 
-	response = OBDIIPerformQuery(socket, &OBDIICommands.mode1SupportedPIDs_61_to_80);
+	//response = OBDIIPerformQuery(socket, OBDIICommands.mode1SupportedPIDs_61_to_80);
 
-	supportedCommands._mode1SupportedPIDs._61_to_80 = response.bitfieldValue;
+	//supportedCommands._mode1SupportedPIDs._61_to_80 = response.bitfieldValue;
 
 	// Mode 9
-	response = OBDIIPerformQuery(socket, &OBDIICommands.mode9SupportedPIDs);
+	response = OBDIIPerformQuery(socket, OBDIICommands.mode9SupportedPIDs);
+
+	// Mask out the PIDs that are not yet implemented
+	response.bitfieldValue &= 0xE0000000;
 
 	supportedCommands._mode9SupportedPIDs = response.bitfieldValue;
 
+exit:
+	numCommands = _BitsSet(supportedCommands._mode1SupportedPIDs._1_to_20) + _BitsSet(supportedCommands._mode1SupportedPIDs._21_to_40) + _BitsSet(supportedCommands._mode1SupportedPIDs._41_to_60) + _BitsSet(supportedCommands._mode1SupportedPIDs._61_to_80) + _BitsSet(supportedCommands._mode9SupportedPIDs);
+
+	numCommands++; // mode 3
+
+	OBDIICommand **commands = malloc(sizeof(OBDIICommand *) * numCommands);
+	if (commands != NULL) {
+		// Mode 1
+		unsigned int pid;
+		for (pid = 0; pid < sizeof(OBDIIMode1Commands) / sizeof(OBDIIMode1Commands[0]); ++pid) {
+			OBDIICommand *command = &OBDIIMode1Commands[pid];
+			if (OBDIICommandSetContainsCommand(&supportedCommands, command)) {
+				*commands = command;
+				++commands;
+			}
+		}
+
+		// Mode 3
+		*commands = OBDIICommands.DTCs;
+		++commands;
+
+		// Mode 9
+		for (pid = 0; pid < sizeof(OBDIIMode9Commands) / sizeof(OBDIIMode9Commands[0]); ++pid) {
+			OBDIICommand *command = &OBDIIMode9Commands[pid];
+			if (OBDIICommandSetContainsCommand(&supportedCommands, command)) {
+				*commands = command;
+				++commands;
+			}
+		}
+
+		supportedCommands.commands = commands;
+		supportedCommands.numCommands = numCommands;
+	}
+
 	return supportedCommands;
+}
+
+void OBDIICommandSetFree(OBDIICommandSet *commandSet) {
+	if (commandSet && commandSet->commands) {
+		free(commandSet->commands);
+	}
 }
 
 OBDIIResponse OBDIIPerformQuery(int socket, OBDIICommand *command)

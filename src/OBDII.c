@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "OBDII.h"
-#include "OBDII_Private.h"
 
 int OBDIICommandSetContainsCommand(OBDIICommandSet *commandSet, OBDIICommand *command)
 {
@@ -9,23 +8,29 @@ int OBDIICommandSetContainsCommand(OBDIICommandSet *commandSet, OBDIICommand *co
 		return 0;
 	}
 	
-	char mode = GET_COMMAND_MODE(command);
+	char mode = OBDIICommandGetMode(command);
 	if (mode == 0x01) {
-		char pid = GET_COMMAND_PID(command);
+		char pid = OBDIICommandGetPID(command);
 
-		if (pid <= 0x20) {
-			return !!(commandSet->_mode1SupportedPIDs._0_to_20 & (1 << pid));
+		if (pid == 0x00) {
+		       return 1;
+		} else if (pid <= 0x20) {
+			return !!(commandSet->_mode1SupportedPIDs._1_to_20 & (1 << (0x20 - pid)));
 		} else if (pid <= 0x40) {
-			return !!(commandSet->_mode1SupportedPIDs._21_to_40 & (1 << (pid - 0x21)));
+			return !!(commandSet->_mode1SupportedPIDs._21_to_40 & (1 << (0x40 - pid)));
 		} else if (pid <= 0x60) {
-			return !!(commandSet->_mode1SupportedPIDs._41_to_60 & (1 << (pid - 0x41)));
+			return !!(commandSet->_mode1SupportedPIDs._41_to_60 & (1 << (0x60 - pid)));
 		} else {
-			return !!(commandSet->_mode1SupportedPIDs._61_to_80 & (1 << (pid - 0x61)));
+			return !!(commandSet->_mode1SupportedPIDs._61_to_80 & (1 << (0x80 - pid)));
 		}
 	} else if (mode == 0x09) {
-		char pid = GET_COMMAND_PID(command);
+		char pid = OBDIICommandGetPID(command);
 
-		return !!(commandSet->_mode9SupportedPIDs & (1 << pid));
+		if (pid == 0x00) {
+			return 1;
+		} else {
+			return !!(commandSet->_mode9SupportedPIDs & (1 << (0x20 - pid)));
+		}
 	}
 
 	return 0;
@@ -43,7 +48,7 @@ int OBDIIResponseSuccessful(OBDIICommand *command, unsigned char *payload, int l
 	}
 
 	// A successful response adds 0x40 to the mode byte
-	char mode = GET_COMMAND_MODE(command);
+	char mode = OBDIICommandGetMode(command);
 	if (payload[0] != mode + 0x40) {
 		return 0;
 	}
@@ -257,8 +262,7 @@ void OBDIIResponseFree(OBDIIResponse *response)
 	}
 }
 
-struct OBDIICommands OBDIICommands = {
-	// Mode 1
+OBDIICommand OBDIIMode1Commands[] = {
 	{ "Supported PIDs in the range 01 - 20", { 0x01, 0x00 }, 6, &OBDIIDecodeBitfield },
 	{ "Monitor status since DTCs cleared", { 0x01, 0x01 }, 6, NULL },
 	{ "Freeze DTC", { 0x01, 0x02 }, 4, NULL },
@@ -337,14 +341,107 @@ struct OBDIICommands OBDIICommands = {
 	{ "Accelerator pedal position F", { 0x01, 0x4B }, 3, &OBDIIDecodePercentage },
 	{ "Commanded throttle actuator", { 0x01, 0x4C }, 3, &OBDIIDecodePercentage },
 	{ "Time run with MIL on", { 0x01, 0x4D }, 4, &OBDIIDecodeUInt16 },
-	{ "Time since trouble codes cleared", { 0x01, 0x4E }, 4, &OBDIIDecodeUInt16 },
-	{ "Supported PIDs in the range 61 - 80", { 0x01, 0x60 }, 6, &OBDIIDecodeBitfield },
+	{ "Time since trouble codes cleared", { 0x01, 0x4E }, 4, &OBDIIDecodeUInt16 }/*,
+	{ "Supported PIDs in the range 61 - 80", { 0x01, 0x60 }, 6, &OBDIIDecodeBitfield }*/
+};
 
-	// Mode 3
-	{ "Get DTCs", { 0x03 }, VARIABLE_RESPONSE_LENGTH, &OBDIIDecodeDTCs },
 
-	// Mode 9
+OBDIICommand OBDIIMode3Command = { "Get DTCs", { 0x03 }, VARIABLE_RESPONSE_LENGTH, &OBDIIDecodeDTCs };
+
+OBDIICommand OBDIIMode9Commands[] = {
 	{ "Supported PIDs", { 0x09, 0x00 }, 6, &OBDIIDecodeBitfield },
 	{ "VIN message count", { 0x09, 0x01 }, 3, NULL },
 	{ "Get VIN", { 0x09, 0x02 }, VARIABLE_RESPONSE_LENGTH, &OBDIIDecodeVIN }
+};
+
+struct OBDIICommands OBDIICommands = {
+	// Mode 1
+	&OBDIIMode1Commands[0],
+	&OBDIIMode1Commands[1],
+	&OBDIIMode1Commands[2],
+	&OBDIIMode1Commands[3],
+	&OBDIIMode1Commands[4],
+	&OBDIIMode1Commands[5],
+	&OBDIIMode1Commands[6],
+	&OBDIIMode1Commands[7],
+	&OBDIIMode1Commands[8],
+	&OBDIIMode1Commands[9],
+	&OBDIIMode1Commands[10],
+	&OBDIIMode1Commands[11],
+	&OBDIIMode1Commands[12],
+	&OBDIIMode1Commands[13],
+	&OBDIIMode1Commands[14],
+	&OBDIIMode1Commands[15],
+	&OBDIIMode1Commands[16],
+	&OBDIIMode1Commands[17],
+	&OBDIIMode1Commands[18],
+	&OBDIIMode1Commands[19],
+	&OBDIIMode1Commands[20],
+	&OBDIIMode1Commands[21],
+	&OBDIIMode1Commands[22],
+	&OBDIIMode1Commands[23],
+	&OBDIIMode1Commands[24],
+	&OBDIIMode1Commands[25],
+	&OBDIIMode1Commands[26],
+	&OBDIIMode1Commands[27],
+	&OBDIIMode1Commands[28],
+	&OBDIIMode1Commands[29],
+	&OBDIIMode1Commands[30],
+	&OBDIIMode1Commands[31],
+	&OBDIIMode1Commands[32],
+	&OBDIIMode1Commands[33],
+	&OBDIIMode1Commands[34],
+	&OBDIIMode1Commands[35],
+	&OBDIIMode1Commands[36],
+	&OBDIIMode1Commands[37],
+	&OBDIIMode1Commands[38],
+	&OBDIIMode1Commands[39],
+	&OBDIIMode1Commands[40],
+	&OBDIIMode1Commands[41],
+	&OBDIIMode1Commands[42],
+	&OBDIIMode1Commands[43],
+	&OBDIIMode1Commands[44],
+	&OBDIIMode1Commands[45],
+	&OBDIIMode1Commands[46],
+	&OBDIIMode1Commands[47],
+	&OBDIIMode1Commands[48],
+	&OBDIIMode1Commands[49],
+	&OBDIIMode1Commands[50],
+	&OBDIIMode1Commands[51],
+	&OBDIIMode1Commands[52],
+	&OBDIIMode1Commands[53],
+	&OBDIIMode1Commands[54],
+	&OBDIIMode1Commands[55],
+	&OBDIIMode1Commands[56],
+	&OBDIIMode1Commands[57],
+	&OBDIIMode1Commands[58],
+	&OBDIIMode1Commands[59],
+	&OBDIIMode1Commands[60],
+	&OBDIIMode1Commands[61],
+	&OBDIIMode1Commands[62],
+	&OBDIIMode1Commands[63],
+	&OBDIIMode1Commands[64],
+	&OBDIIMode1Commands[65],
+	&OBDIIMode1Commands[66],
+	&OBDIIMode1Commands[67],
+	&OBDIIMode1Commands[68],
+	&OBDIIMode1Commands[69],
+	&OBDIIMode1Commands[70],
+	&OBDIIMode1Commands[71],
+	&OBDIIMode1Commands[72],
+	&OBDIIMode1Commands[73],
+	&OBDIIMode1Commands[74],
+	&OBDIIMode1Commands[75],
+	&OBDIIMode1Commands[76],
+	&OBDIIMode1Commands[77],
+	&OBDIIMode1Commands[78],
+//	&OBDIIMode1Commands[79],
+
+	//OBDII Mode 3
+	&OBDIIMode3Command,
+
+	//OBDIIM Mode 9
+	&OBDIIMode9Commands[0],
+	&OBDIIMode9Commands[1],
+	&OBDIIMode9Commands[2]
 };
