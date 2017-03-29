@@ -68,6 +68,8 @@ mode9:
 exit:
 	numCommands = _BitsSet(supportedCommands._mode1SupportedPIDs._1_to_20) + _BitsSet(supportedCommands._mode1SupportedPIDs._21_to_40) + _BitsSet(supportedCommands._mode1SupportedPIDs._41_to_60) + _BitsSet(supportedCommands._mode1SupportedPIDs._61_to_80) + _BitsSet(supportedCommands._mode9SupportedPIDs);
 
+	numCommands += 2; // mode 1, pid 0 and mode 9, pid 0
+
 	numCommands++; // mode 3
 
 	OBDIICommand **commands = malloc(sizeof(OBDIICommand *) * numCommands);
