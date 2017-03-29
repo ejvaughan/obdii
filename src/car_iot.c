@@ -166,15 +166,11 @@ int main(int argc, char** argv) {
 		exit(1);
     	}
 
+	// Query the car's supported commands
+	OBDIICommandSet supportedCommands = OBDIIGetSupportedCommands(s);
+
 	char JsonDocumentBuffer[MAX_LENGTH_OF_UPDATE_JSON_BUFFER];
 	size_t sizeOfJsonDocumentBuffer = sizeof(JsonDocumentBuffer) / sizeof(JsonDocumentBuffer[0]);
-	float engineRPMs = 0.0;
-
-	jsonStruct_t engineRPMsHandler;
-	engineRPMsHandler.cb = NULL;
-	engineRPMsHandler.pKey = "engineRPMs";
-	engineRPMsHandler.pData = &engineRPMs;
-	engineRPMsHandler.type = SHADOW_JSON_FLOAT;
 
 	char *certFile = realpath(certOption.value, NULL);
 	char *keyFile = realpath(privateKeyOption.value, NULL);
@@ -224,31 +220,83 @@ int main(int argc, char** argv) {
 
 	// loop and publish a change in engine RPMs
 	while (NETWORK_ATTEMPTING_RECONNECT == rc || RECONNECT_SUCCESSFUL == rc || NONE_ERROR == rc) {
-		rc = aws_iot_shadow_yield(&mqttClient, 200);
-		if (NETWORK_ATTEMPTING_RECONNECT == rc) {
+
+		if ((rc = aws_iot_shadow_yield(&mqttClient, 200)) == NETWORK_ATTEMPTING_RECONNECT) {
 			sleep(1);
 			// If the client is attempting to reconnect we will skip the rest of the loop.
 			continue;
 		}
-		INFO("\n=======================================================================================\n");
 
-		// Get engine RPMs
-	    	OBDIIResponse response = OBDIIPerformQuery(s, OBDIICommands.engineRPMs);
-		engineRPMs = response.numericValue;
+		if ((rc = aws_iot_shadow_init_json_document(JsonDocumentBuffer, sizeOfJsonDocumentBuffer)) != NONE_ERROR) {
+			break;
+		}
 
-		rc = aws_iot_shadow_init_json_document(JsonDocumentBuffer, sizeOfJsonDocumentBuffer);
-		if (rc == NONE_ERROR) {
-			rc = aws_iot_shadow_add_reported(JsonDocumentBuffer, sizeOfJsonDocumentBuffer, 1, &engineRPMsHandler);
-			if (rc == NONE_ERROR) {
-				rc = aws_iot_finalize_json_document(JsonDocumentBuffer, sizeOfJsonDocumentBuffer);
-				if (rc == NONE_ERROR) {
-					INFO("Update Shadow: %s", JsonDocumentBuffer);
-					rc = aws_iot_shadow_update(&mqttClient, thingNameOption.value, JsonDocumentBuffer,
-							ShadowUpdateStatusCallback, NULL, 4, true);
+		if ((rc = aws_iot_shadow_begin_section(JsonDocumentBuffer, sizeOfJsonDocumentBuffer, ShadowSectionTypeReported)) != NONE_ERROR) {
+			break;
+		}
+
+		int i;
+		for (i = 0; i < supportedCommands.numCommands; ++i) {
+			OBDIICommand *command = supportedCommands.commands[i];
+
+			// Skip over the following commands
+			if (command == OBDIICommands.mode1SupportedPIDs_1_to_20 || command == OBDIICommands.mode1SupportedPIDs_21_to_40 || command == OBDIICommands.mode1SupportedPIDs_41_to_60 || command == OBDIICommands.mode9SupportedPIDs) {
+				continue;
+			}
+
+			OBDIIResponse response = OBDIIPerformQuery(s, command);
+
+			if (response.success) {
+				unsigned char mode = OBDIICommandGetMode(command);
+				unsigned char PID = OBDIICommandGetPID(command);
+
+				char propertyName[6];
+				propertyName[5] = '\0';
+				sprintf(propertyName, "%02x:%02x", mode, PID);
+
+				jsonStruct_t keyValuePair;
+				keyValuePair.cb = NULL;
+				keyValuePair.pKey = propertyName;
+
+				switch (command->responseType) {
+					case OBDIIResponseTypeNumeric:
+						keyValuePair.pData = &response.numericValue;
+						keyValuePair.type = SHADOW_JSON_FLOAT;
+						break;
+						
+					case OBDIIResponseTypeBitfield:
+						keyValuePair.pData = &response.bitfieldValue;
+						keyValuePair.type = SHADOW_JSON_UINT32;
+						break;
+
+					case OBDIIResponseTypeString:
+						keyValuePair.pData = response.stringValue;
+						keyValuePair.type = SHADOW_JSON_STRING;
+						break;
+				}
+
+				if ((rc = aws_iot_shadow_add_key_value_pair(JsonDocumentBuffer, sizeOfJsonDocumentBuffer, &keyValuePair)) != NONE_ERROR) {
+					OBDIIResponseFree(&response);
+					break;
 				}
 			}
+
+			OBDIIResponseFree(&response);
 		}
-		INFO("*****************************************************************************************\n");
+
+		if ((rc = aws_iot_shadow_end_section(JsonDocumentBuffer, sizeOfJsonDocumentBuffer)) != NONE_ERROR) {
+			break;
+		}
+
+		if ((rc = aws_iot_finalize_json_document(JsonDocumentBuffer, sizeOfJsonDocumentBuffer)) != NONE_ERROR) {
+			break;
+		}
+
+		INFO("Update Shadow: %s", JsonDocumentBuffer);
+		if ((rc = aws_iot_shadow_update(&mqttClient, thingNameOption.value, JsonDocumentBuffer, ShadowUpdateStatusCallback, NULL, 4, true)) != NONE_ERROR) {
+			break;
+		}
+
 		sleep(1);
 	}
 
