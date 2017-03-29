@@ -60,9 +60,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <errno.h>
 
 #include <linux/can.h>
-#include <linux/can/isotp.h>
 
 #include "OBDII.h"
 #include "OBDIICommunication.h"
@@ -77,25 +77,23 @@ void print_usage(char *program_name) {
 int main(int argc, char **argv)
 {
     int s;
-    struct sockaddr_can addr;
     int opt, i;
     extern int optind, opterr, optopt;
-
-    addr.can_addr.tp.tx_id = addr.can_addr.tp.rx_id = NO_CAN_ID;
+    canid_t tx_id = NO_CAN_ID, rx_id = NO_CAN_ID;
 
     while ((opt = getopt(argc, argv, "r:t:")) != -1) {
 	    switch (opt) {
 	    case 't':
-		    addr.can_addr.tp.tx_id = strtoul(optarg, (char **)NULL, 16);
+		    tx_id = strtoul(optarg, (char **)NULL, 16);
 		    if (strlen(optarg) > 7) {
-			    addr.can_addr.tp.tx_id |= CAN_EFF_FLAG;
+			    tx_id |= CAN_EFF_FLAG;
 		    }
 		    break;
 
 	    case 'r':
-		    addr.can_addr.tp.rx_id = strtoul(optarg, (char **)NULL, 16);
+		    rx_id = strtoul(optarg, (char **)NULL, 16);
 		    if (strlen(optarg) > 7) {
-			    addr.can_addr.tp.rx_id |= CAN_EFF_FLAG;
+			    rx_id |= CAN_EFF_FLAG;
 	            }
 		    break;
 
@@ -108,24 +106,15 @@ int main(int argc, char **argv)
     }
 
     if ((argc - optind != 1) ||
-	(addr.can_addr.tp.tx_id == NO_CAN_ID) ||
-	(addr.can_addr.tp.rx_id == NO_CAN_ID)) {
+	(tx_id == NO_CAN_ID) ||
+	(rx_id == NO_CAN_ID)) {
 	    print_usage(basename(argv[0]));
 	    exit(1);
     }
 
-    if ((s = socket(PF_CAN, SOCK_DGRAM, CAN_ISOTP)) < 0) {
-		perror("socket");
-		exit(1);
-    }
-
-    addr.can_family = AF_CAN;
-    addr.can_ifindex = if_nametoindex(argv[optind]);
-
-    if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-		perror("bind");
-		close(s);
-		exit(1);
+    if ((s = OBDIIOpenSocket(argv[optind], tx_id, rx_id)) < 0) {
+	printf("Error connecting to vehicle: %s\n", strerror(errno));
+    	exit(EXIT_FAILURE);
     }
     
     printf("Supported commands:\n");
@@ -176,7 +165,7 @@ int main(int argc, char **argv)
 
     OBDIICommandSetFree(&supportedCommands);
 
-    close(s);
+    OBDIICloseSocket(s);
 
     return 0;
 }

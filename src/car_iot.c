@@ -81,7 +81,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <linux/can.h>
-#include <linux/can/isotp.h>
+#include <errno.h>
 
 #include "aws_iot_log.h"
 #include "aws_iot_version.h"
@@ -140,31 +140,23 @@ int main(int argc, char** argv) {
 	}
 
 	// Set up the CAN socket
-	struct sockaddr_can addr;
-	addr.can_addr.tp.tx_id = strtoul(transferIDOption.value, (char **)NULL, 16);
+	canid_t tx_id, rx_id;
+
+	tx_id = strtoul(transferIDOption.value, (char **)NULL, 16);
 	if (strlen(transferIDOption.value) > 7) {
-	        addr.can_addr.tp.tx_id |= CAN_EFF_FLAG;
+	        tx_id |= CAN_EFF_FLAG;
 	}
 
-	addr.can_addr.tp.rx_id = strtoul(receiveIDOption.value, (char **)NULL, 16);
+	rx_id = strtoul(receiveIDOption.value, (char **)NULL, 16);
 	if (strlen(receiveIDOption.value) > 7) {
-	        addr.can_addr.tp.rx_id |= CAN_EFF_FLAG;
+	        rx_id |= CAN_EFF_FLAG;
 	}
 
 	int s;
-    	if ((s = socket(PF_CAN, SOCK_DGRAM, CAN_ISOTP)) < 0) {
-		perror("socket");
-		exit(1);
-    	}
-
-    	addr.can_family = AF_CAN;
-    	addr.can_ifindex = if_nametoindex(argv[nextArgIndex]);
-
-    	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-		perror("bind");
-		close(s);
-		exit(1);
-    	}
+	if ((s = OBDIIOpenSocket(argv[nextArgIndex], tx_id, rx_id)) < 0) {
+		printf("Error communicating with vehicle: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
 
 	// Query the car's supported commands
 	OBDIICommandSet supportedCommands = OBDIIGetSupportedCommands(s);
@@ -311,7 +303,7 @@ int main(int argc, char** argv) {
 		ERROR("Disconnect error %d", rc);
 	}
 
-	close(s);
+	OBDIICloseSocket(s);
 
 	FreeCommandLineArgTemplateResources(argTemplates, sizeof(argTemplates)/sizeof(argTemplates[0]));
 

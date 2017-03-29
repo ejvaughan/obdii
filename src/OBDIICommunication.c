@@ -1,8 +1,38 @@
 #include "OBDIICommunication.h"
 #include <stdlib.h>
 #include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <net/if.h>
 
 #define MAX_ISOTP_PAYLOAD 4095
+
+int OBDIIOpenSocket(const char *ifname, canid_t tx_id, canid_t rx_id)
+{
+	int s;
+	struct sockaddr_can addr;
+
+	addr.can_addr.tp.tx_id = tx_id;
+	addr.can_addr.tp.rx_id = rx_id;
+	    addr.can_family = AF_CAN;
+	    addr.can_ifindex = if_nametoindex(ifname);
+
+	    if ((s = socket(PF_CAN, SOCK_DGRAM, CAN_ISOTP)) < 0) {
+			return -1;
+	    }
+
+	    if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+			close(s);
+			return -1;
+	    }
+
+	    return s;
+}
+
+void OBDIICloseSocket(int s)
+{
+	close(s);
+}
 
 // Counts # bits set in the argument
 // Code from Kernighan
