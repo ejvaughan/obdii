@@ -62,6 +62,17 @@ struct jsonStruct {
 	jsonStructCallback_t cb; ///< callback to be executed on receiving the Key value pair
 };
 
+typedef enum ShadowSectionType  {
+	ShadowSectionTypeReported,
+	ShadowSectionTypeExpected
+} ShadowSectionType;
+
+IoT_Error_t aws_iot_shadow_begin_section(char *pJsonDocument, size_t maxSizeOfJsonDocument, ShadowSectionType section);
+
+IoT_Error_t aws_iot_shadow_end_section(char *pJsonDocument, size_t maxSizeOfJsonDocument);
+
+IoT_Error_t aws_iot_shadow_add_key_value_pair(char *pJsonDocument, size_t maxSizeOfJsonDocument, jsonStruct_t *keyValuePair);
+
 /**
  * @brief Initialize the JSON document with Shadow expected name/value
  *
