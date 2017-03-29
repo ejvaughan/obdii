@@ -8,9 +8,9 @@ int OBDIICommandSetContainsCommand(OBDIICommandSet *commandSet, OBDIICommand *co
 		return 0;
 	}
 	
-	char mode = OBDIICommandGetMode(command);
+	unsigned char mode = OBDIICommandGetMode(command);
 	if (mode == 0x01) {
-		char pid = OBDIICommandGetPID(command);
+		unsigned char pid = OBDIICommandGetPID(command);
 
 		if (pid == 0x00) {
 		       return 1;
@@ -24,7 +24,7 @@ int OBDIICommandSetContainsCommand(OBDIICommandSet *commandSet, OBDIICommand *co
 			return !!(commandSet->_mode1SupportedPIDs._61_to_80 & (1 << (0x80 - pid)));
 		}
 	} else if (mode == 0x09) {
-		char pid = OBDIICommandGetPID(command);
+		unsigned char pid = OBDIICommandGetPID(command);
 
 		if (pid == 0x00) {
 			return 1;
@@ -235,6 +235,7 @@ void OBDIIDecodeFuelAirEquivalence(OBDIIResponse *response, unsigned char *respo
 OBDIIResponse OBDIIDecodeResponseForCommand(OBDIICommand *command, unsigned char *payload, int len)
 {
 	OBDIIResponse response = { 0 };
+	response.command = command;
 
 	if (!command || !payload || len <= 0) {
 		return response;
@@ -253,11 +254,11 @@ void OBDIIResponseFree(OBDIIResponse *response)
 		return;
 	}
 
-	if (response->DTCs.troubleCodes != NULL) {
+	if (response->command == OBDIICommands.DTCs && response->DTCs.troubleCodes != NULL) {
 		free(response->DTCs.troubleCodes);
 	}
 
-	if (response->stringValue != NULL) {
+	if (response->command->responseType == OBDIIResponseTypeString && response->stringValue != NULL) {
 		free(response->stringValue);
 	}
 }

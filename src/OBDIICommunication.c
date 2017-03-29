@@ -8,11 +8,10 @@
 // Code from Kernighan
 static inline unsigned int _BitsSet(unsigned int word)
 {
-	unsigned int v; // count the number of bits set in v
 	unsigned int c; // c accumulates the total bits set in v
-	for (c = 0; v; c++)
+	for (c = 0; word; c++)
 	{
-	  v &= v - 1; // clear the least significant bit set
+	  word &= word - 1; // clear the least significant bit set
 	}
 	return c;
 }
@@ -29,7 +28,7 @@ OBDIICommandSet OBDIIGetSupportedCommands(int socket)
 
 	// If PID 0x20 is supported, we can query the next set of PIDs
 	if (!(response.bitfieldValue & 0x01)) {
-		goto exit;
+		goto mode9;
 	}
 
 	response = OBDIIPerformQuery(socket, OBDIICommands.mode1SupportedPIDs_21_to_40);
@@ -38,7 +37,7 @@ OBDIICommandSet OBDIIGetSupportedCommands(int socket)
 
 	// If PID 0x40 is supported, we can query the next set of PIDs
 	if (!(response.bitfieldValue & 0x01)) {
-		goto exit;
+		goto mode9;
 	}
 
 	response = OBDIIPerformQuery(socket, OBDIICommands.mode1SupportedPIDs_41_to_60);
@@ -50,13 +49,14 @@ OBDIICommandSet OBDIIGetSupportedCommands(int socket)
 
 	//// If PID 0x60 is supported, we can query the next set of commands
 	//if (!(response.bitfieldValue & 0x01)) {
-	//	goto exit;
+	//	goto mode9;
 	//}
 
 	//response = OBDIIPerformQuery(socket, OBDIICommands.mode1SupportedPIDs_61_to_80);
 
 	//supportedCommands._mode1SupportedPIDs._61_to_80 = response.bitfieldValue;
 
+mode9:
 	// Mode 9
 	response = OBDIIPerformQuery(socket, OBDIICommands.mode9SupportedPIDs);
 
@@ -72,6 +72,9 @@ exit:
 
 	OBDIICommand **commands = malloc(sizeof(OBDIICommand *) * numCommands);
 	if (commands != NULL) {
+		supportedCommands.commands = commands;
+		supportedCommands.numCommands = numCommands;
+
 		// Mode 1
 		unsigned int pid;
 		for (pid = 0; pid < sizeof(OBDIIMode1Commands) / sizeof(OBDIIMode1Commands[0]); ++pid) {
@@ -94,9 +97,6 @@ exit:
 				++commands;
 			}
 		}
-
-		supportedCommands.commands = commands;
-		supportedCommands.numCommands = numCommands;
 	}
 
 	return supportedCommands;

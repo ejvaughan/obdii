@@ -86,6 +86,7 @@ struct OBDIICommands {
 	OBDIICommand *intakeAirTemperature;		// Celsius
 	OBDIICommand *mafAirFlowRate;			// grams/sec
 	OBDIICommand *throttlePosition;			// Percentage
+	OBDIICommand *commandedSecondaryAirStatus;
 	OBDIICommand *oxygenSensorsPresentIn2Banks;
 	OBDIICommand *oxygenSensor1_fuelTrim;
 	OBDIICommand *oxygenSensor2_fuelTrim;
