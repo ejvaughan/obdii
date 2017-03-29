@@ -111,6 +111,7 @@ void OBDIICommandSetFree(OBDIICommandSet *commandSet) {
 OBDIIResponse OBDIIPerformQuery(int socket, OBDIICommand *command)
 {
 		OBDIIResponse response = { 0 };
+		response.command = command;
 
 		// Send the command
 	    int retval = write(socket, command->payload, sizeof(command->payload));

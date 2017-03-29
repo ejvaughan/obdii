@@ -127,32 +127,54 @@ int main(int argc, char **argv)
 		close(s);
 		exit(1);
     }
+    
+    printf("Supported commands:\n");
 
-    // OBDIIResponse dtcResponse = OBDIIPerformQuery(s, OBDIICommands.getDTCs);
+	OBDIICommandSet supportedCommands = OBDIIGetSupportedCommands(s);
 
-    // for (i = 0; i < dtcResponse.numDTCs; ++i) {
-    // 	printf("%s", dtcResponse.DTCs[i]);
-    // }
-
-    // OBDIIResponseFree(dtcResponse);
-
-    OBDIIResponse dtcResponse = OBDIIPerformQuery(s, OBDIICommands.VIN);
-    printf("VIN: %s\n", dtcResponse.stringValue);
-    OBDIIResponseFree(&dtcResponse);
+	for (i = 0; i < supportedCommands.numCommands; ++i) {
+		OBDIICommand *command = supportedCommands.commands[i];
+		printf("%i: mode %02x, PID %02x: %s\n", i, OBDIICommandGetMode(command), OBDIICommandGetPID(command), command->name);
+	}
 
     while (1) {
-	    // Send a request for the engine RPMs
-	    OBDIIResponse response = OBDIIPerformQuery(s, OBDIICommands.engineRPMs);
-	    printf("Engine RPMs: %f\n", response.numericValue);
+	printf("> "); // Print prompt
 
-	    response = OBDIIPerformQuery(s, OBDIICommands.engineCoolantTemperature);
-	    printf("Engine coolant temperature (Celsius): %i\n", response.numericValue);
+	// Get user's selection
+	int selection;
+	scanf("%d", &selection);
 
-	    response = OBDIIPerformQuery(s, OBDIICommands.calculatedEngineLoad);
-	    printf("Calculated engine load: %f\n", response.numericValue);
+	if (selection >= 0 && selection < supportedCommands.numCommands) {
+		OBDIICommand *command = supportedCommands.commands[selection];
 
-	    sleep(1);
+		printf("Querying mode %02x PID %02x...\n", OBDIICommandGetMode(command), OBDIICommandGetPID(command));
+		OBDIIResponse response = OBDIIPerformQuery(s, command);
+
+		if (response.success) {
+			printf("Retrieved: ");
+
+			if (command->responseType == OBDIIResponseTypeNumeric) {
+				printf("%.2f", response.numericValue);
+			} else if (command->responseType == OBDIIResponseTypeBitfield) {
+				printf("%08x", response.bitfieldValue);
+			} else if (command->responseType == OBDIIResponseTypeString) {
+				printf("%s", response.stringValue);
+			} else if (command->responseType == OBDIIResponseTypeOther) {
+				printf("Unimplemented!");
+			}
+
+			printf("\n");
+		} else {
+			printf("Error retrieving data. Please try again!\n");
+		}
+		
+		OBDIIResponseFree(&response);
+	} else {
+		printf("%d is not a valid command!\n", selection);
+	}
    }
+
+    OBDIICommandSetFree(&supportedCommands);
 
     close(s);
 

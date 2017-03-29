@@ -4,8 +4,11 @@
 
 #define VARIABLE_RESPONSE_LENGTH 0
 
+struct OBDIICommand; // Forward declaration
+
 typedef struct OBDIIResponse {
 	int success;
+	struct OBDIICommand *command;
 
 	union {
 		float numericValue;
@@ -28,12 +31,19 @@ typedef struct OBDIIResponse {
 	};
 } OBDIIResponse;
 
-struct OBDIICommand;
+typedef enum OBDIIResponseType {
+	OBDIIResponseTypeBitfield,
+	OBDIIResponseTypeNumeric,
+	OBDIIResponseTypeString,
+	OBDIIResponseTypeOther
+} OBDIIResponseType;
+
 typedef void (*OBDIIResponseDecoder)(OBDIIResponse *, unsigned char *, int);
 
 typedef struct OBDIICommand {
 	char *name;
 	unsigned char payload[2];
+	OBDIIResponseType responseType;	
 	short expectedResponseLength;
 	OBDIIResponseDecoder responseDecoder;
 } OBDIICommand;
