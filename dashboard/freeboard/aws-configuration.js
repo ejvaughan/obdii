@@ -13,12 +13,12 @@
  * permissions and limitations under the License.
  */
 
-.spacer {
-   height: 125px ;
-}
-
-.block {
-   width:250px ;
-   margin-left: auto ;
-   margin-right: auto ;
-}
+/*
+ * NOTE: You must set the following string constants prior to running this
+ * example application.
+ */
+var awsConfiguration = {
+   poolId: 'us-east-1:ee869f3c-fb26-4496-838b-79c4460286fd', // 'YourCognitoIdentityPoolId'
+   region: 'us-east-1' // 'YourAwsRegion', e.g. 'us-east-1'
+};
+module.exports = awsConfiguration;
