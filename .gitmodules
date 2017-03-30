@@ -1,3 +1,9 @@
+[submodule "uthash"]
+	path = uthash
+	url = https://github.com/troydhanson/uthash.git
+[submodule "aws-iot-device-sdk-js"]
+	path = aws-iot-device-sdk-js
+	url = https://github.com/aws/aws-iot-device-sdk-js.git
 [submodule "EasyArgs"]
 	path = EasyArgs
 	url = https://github.com/ejvaughan/EasyArgs.git
