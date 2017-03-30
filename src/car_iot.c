@@ -81,7 +81,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <linux/can.h>
-#include <linux/can/isotp.h>
+#include <errno.h>
 
 #include "aws_iot_log.h"
 #include "aws_iot_version.h"
@@ -90,12 +90,13 @@
 #include "aws_iot_config.h"
 #include "aws_iot_mqtt_interface.h"
 
+#include "EasyArgs.h"
 #include "OBDII.h"
 #include "OBDIICommunication.h"
 
-#define NO_CAN_ID 0xFFFFFFFFU
+#define MAX_LENGTH_OF_UPDATE_JSON_BUFFER 200
 
-void print_usage(char *program_name) {
+void PrintUsage(char *program_name) {
 	printf("Usage: %s -t <transfer CAN ID> -r <receive CAN ID> <CAN interface>\n	<transfer CAN ID>: The CAN ID that will be used for sending the diagnostic requests. For 11-bit identifiers, this can be either the broadcast ID, 0x7DF, or an ID in the range 0x7E0 to 0x7E7, indicating a particular ECU.\n	<receive CAN ID>: The CAN ID that the ECU will be using to respond to the diagnostic requests that are sent. For 11-bit identifiers, this is an ID in the range 0x7E8 to 0x7EF (i.e. <transfer CAN ID> + 8)\n", program_name);
 }
 
@@ -111,141 +112,89 @@ void ShadowUpdateStatusCallback(const char *pThingName, ShadowActions_t action, 
 	}
 }
 
-char certDirectory[PATH_MAX + 1] = "../linux_mqtt_openssl-latest/certs";
-		
-char HostAddress[255] = AWS_IOT_MQTT_HOST;
-uint32_t port = AWS_IOT_MQTT_PORT;
-uint8_t numPubs = 5;
-struct sockaddr_can addr;
+int main(int argc, char** argv) {
+	CommandLineArgTemplate endpointURLOption = CreateArgTemplate("e", "endpoing-url", 1, 1, "AWS endpoint URL");
+	CommandLineArgTemplate thingNameOption = CreateArgTemplate("t", "thingname", 1, 1, "AWS thing name");
+	CommandLineArgTemplate portOption = CreateArgTemplate("p", "port", 0, 1, "AWS port");
+	CommandLineArgTemplate certOption = CreateArgTemplate("c", "cert", 1, 1, "AWS cert file");
+	CommandLineArgTemplate privateKeyOption = CreateArgTemplate("k", "privatekey", 1, 1, "AWS private key file");
+	CommandLineArgTemplate rootCertOption = CreateArgTemplate("r", "rootcert", 1, 1, "AWS root CA file");
+	CommandLineArgTemplate transferIDOption = CreateArgTemplate("tx", "transfer-id", 1, 1, "The CAN ID that will be used for sending the diagnostic requests. For 11-bit identifiers, t      his can be either the broadcast ID, 0x7DF, or an ID in the range 0x7E0 to 0x7E7, indicating a particular ECU.");
+	CommandLineArgTemplate receiveIDOption = CreateArgTemplate("rx", "receive-id", 1, 1, "The CAN ID that the ECU will be using to respond to the diagnostic       requests that are sent. For 11-bit identifiers, this is an ID in the range 0x7E8 to 0x7EF (i.e. <transfer CAN ID> + 8)");
+	CommandLineArgTemplate configOption = CreateArgTemplate("f", "configFile", 0, 1, "Configuration file");
 
-void parseInputArgsForConnectParams(int argc, char** argv) {
-	int opt;
+	CommandLineArgTemplate *argTemplates[] = { &endpointURLOption, &thingNameOption, &portOption, &certOption, &privateKeyOption, &rootCertOption, &transferIDOption, &receiveIDOption, &configOption };
 
-	while (-1 != (opt = getopt(argc, argv, "t:r:h:p:c:n:"))) {
-		switch (opt) {
-		case 'h':
-			strcpy(HostAddress, optarg);
-			DEBUG("Host %s", optarg);
-			break;
-		case 'p':
-			port = atoi(optarg);
-			DEBUG("arg %s", optarg);
-			break;
-		case 'c':
-			strcpy(certDirectory, optarg);
-			DEBUG("cert root directory %s", optarg);
-			break;
-		case 'n':
-			numPubs = atoi(optarg);
-			DEBUG("num pubs %s", optarg);
-			break;
-		case '?':
-			if (optopt == 'c') {
-				ERROR("Option -%c requires an argument.", optopt);
-			} else if (isprint(optopt)) {
-				WARN("Unknown option `-%c'.", optopt);
-			} else {
-				WARN("Unknown option character `\\x%x'.", optopt);
-			}
-			break;
-		case 't':
-		    addr.can_addr.tp.tx_id = strtoul(optarg, (char **)NULL, 16);
-		    if (strlen(optarg) > 7) {
-			    addr.can_addr.tp.tx_id |= CAN_EFF_FLAG;
-		    }
-		    break;
-
-	    	case 'r':
-		    addr.can_addr.tp.rx_id = strtoul(optarg, (char **)NULL, 16);
-		    if (strlen(optarg) > 7) {
-			    addr.can_addr.tp.rx_id |= CAN_EFF_FLAG;
-	            }
-		    break;
-	    	default:
-		    fprintf(stderr, "Unknown option %c\n", opt);
-		    print_usage(basename(argv[0]));
-		    exit(1);
-		    break;
-	    }
+	int nextArgIndex; 
+	char *outError;
+	if ((nextArgIndex = ParseCommandLineArgs(argc, argv, argTemplates, sizeof(argTemplates)/sizeof(argTemplates[0]), &configOption, "config", &outError)) < 0) {
+		printf("Error: %s\n", outError);
+		free(outError);
+		exit(EXIT_FAILURE);
 	}
 
-}
+	if (nextArgIndex != argc - 1) {
+		PrintUsage(basename(argv[0]));
+		exit(EXIT_FAILURE);
 
-#define MAX_LENGTH_OF_UPDATE_JSON_BUFFER 200
+	}
 
-int main(int argc, char** argv) {
+	// Set up the CAN socket
+	canid_t tx_id, rx_id;
+
+	tx_id = strtoul(transferIDOption.value, (char **)NULL, 16);
+	if (strlen(transferIDOption.value) > 7) {
+	        tx_id |= CAN_EFF_FLAG;
+	}
+
+	rx_id = strtoul(receiveIDOption.value, (char **)NULL, 16);
+	if (strlen(receiveIDOption.value) > 7) {
+	        rx_id |= CAN_EFF_FLAG;
+	}
+
+	int s;
+	if ((s = OBDIIOpenSocket(argv[nextArgIndex], tx_id, rx_id)) < 0) {
+		printf("Error communicating with vehicle: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	// Query the car's supported commands
+	OBDIICommandSet supportedCommands = OBDIIGetSupportedCommands(s);
+
+	char JsonDocumentBuffer[MAX_LENGTH_OF_UPDATE_JSON_BUFFER];
+	size_t sizeOfJsonDocumentBuffer = sizeof(JsonDocumentBuffer) / sizeof(JsonDocumentBuffer[0]);
+
+	char *certFile = realpath(certOption.value, NULL);
+	char *keyFile = realpath(privateKeyOption.value, NULL);
+	char *rootCAFile = realpath(rootCertOption.value, NULL);
+
+	DEBUG("Using rootCA %s", rootCAFile);
+	DEBUG("Using clientCRT %s", certFile);
+	DEBUG("Using clientKey %s", keyFile);
+
+	// Connect to the shadow service
 	IoT_Error_t rc = NONE_ERROR;
 
 	MQTTClient_t mqttClient;
 	aws_iot_mqtt_init(&mqttClient);
 
-	char JsonDocumentBuffer[MAX_LENGTH_OF_UPDATE_JSON_BUFFER];
-	size_t sizeOfJsonDocumentBuffer = sizeof(JsonDocumentBuffer) / sizeof(JsonDocumentBuffer[0]);
-	float engineRPMs = 0.0;
-
-	jsonStruct_t engineRPMsHandler;
-	engineRPMsHandler.cb = NULL;
-	engineRPMsHandler.pKey = "engineRPMs";
-	engineRPMsHandler.pData = &engineRPMs;
-	engineRPMsHandler.type = SHADOW_JSON_FLOAT;
-
-	char rootCA[PATH_MAX + 1];
-	char clientCRT[PATH_MAX + 1];
-	char clientKey[PATH_MAX + 1];
-	char CurrentWD[PATH_MAX + 1];
-	char cafileName[] = AWS_IOT_ROOT_CA_FILENAME;
-	char clientCRTName[] = AWS_IOT_CERTIFICATE_FILENAME;
-	char clientKeyName[] = AWS_IOT_PRIVATE_KEY_FILENAME;
-
-    	addr.can_addr.tp.tx_id = addr.can_addr.tp.rx_id = NO_CAN_ID;
-
-	parseInputArgsForConnectParams(argc, argv);
-
-    	if ((argc - optind != 1) || (addr.can_addr.tp.tx_id == NO_CAN_ID) || (addr.can_addr.tp.rx_id == NO_CAN_ID)) {
-	    print_usage(basename(argv[0]));
-	    exit(1);
-    	}
-
-	getcwd(CurrentWD, sizeof(CurrentWD));
-	sprintf(rootCA, "%s/%s/%s", CurrentWD, certDirectory, cafileName);
-	sprintf(clientCRT, "%s/%s/%s", CurrentWD, certDirectory, clientCRTName);
-	sprintf(clientKey, "%s/%s/%s", CurrentWD, certDirectory, clientKeyName);
-
-	DEBUG("Using rootCA %s", rootCA);
-	DEBUG("Using clientCRT %s", clientCRT);
-	DEBUG("Using clientKey %s", clientKey);
-
-	// Set up the CAN socket
-	int s;
-    	if ((s = socket(PF_CAN, SOCK_DGRAM, CAN_ISOTP)) < 0) {
-		perror("socket");
-		exit(1);
-    	}
-
-    	addr.can_family = AF_CAN;
-    	addr.can_ifindex = if_nametoindex(argv[optind]);
-
-    	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-		perror("bind");
-		close(s);
-		exit(1);
-    	}
-
-	// Connect to the shadow service
 	ShadowParameters_t sp = ShadowParametersDefault;
-	sp.pMyThingName = AWS_IOT_MY_THING_NAME;
-	sp.pMqttClientId = AWS_IOT_MQTT_CLIENT_ID;
-	sp.pHost = HostAddress;
-	sp.port = port;
-	sp.pClientCRT = clientCRT;
-	sp.pClientKey = clientKey;
-	sp.pRootCA = rootCA;
+	sp.pMyThingName = thingNameOption.value;
+	sp.pMqttClientId = thingNameOption.value;
+	sp.pHost = endpointURLOption.value;
+	sp.port = (portOption.present) ? atoi(portOption.value) : 8883;
+	sp.pClientCRT = certFile;
+	sp.pClientKey = keyFile;
+	sp.pRootCA = rootCAFile;
 
 	INFO("Shadow Init");
 	rc = aws_iot_shadow_init(&mqttClient);
 
 	INFO("Shadow Connect");
 	rc = aws_iot_shadow_connect(&mqttClient, &sp);
+	free(certFile);
+	free(keyFile);
+	free(rootCAFile);
 
 	if (NONE_ERROR != rc) {
 		ERROR("Shadow Connection Error %d", rc);
@@ -263,31 +212,83 @@ int main(int argc, char** argv) {
 
 	// loop and publish a change in engine RPMs
 	while (NETWORK_ATTEMPTING_RECONNECT == rc || RECONNECT_SUCCESSFUL == rc || NONE_ERROR == rc) {
-		rc = aws_iot_shadow_yield(&mqttClient, 200);
-		if (NETWORK_ATTEMPTING_RECONNECT == rc) {
+
+		if ((rc = aws_iot_shadow_yield(&mqttClient, 200)) == NETWORK_ATTEMPTING_RECONNECT) {
 			sleep(1);
 			// If the client is attempting to reconnect we will skip the rest of the loop.
 			continue;
 		}
-		INFO("\n=======================================================================================\n");
 
-		// Get engine RPMs
-	    	OBDIIResponse response = OBDIIPerformQuery(s, OBDIICommands.engineRPMs);
-		engineRPMs = response.floatValue;
+		if ((rc = aws_iot_shadow_init_json_document(JsonDocumentBuffer, sizeOfJsonDocumentBuffer)) != NONE_ERROR) {
+			break;
+		}
 
-		rc = aws_iot_shadow_init_json_document(JsonDocumentBuffer, sizeOfJsonDocumentBuffer);
-		if (rc == NONE_ERROR) {
-			rc = aws_iot_shadow_add_reported(JsonDocumentBuffer, sizeOfJsonDocumentBuffer, 1, &engineRPMsHandler);
-			if (rc == NONE_ERROR) {
-				rc = aws_iot_finalize_json_document(JsonDocumentBuffer, sizeOfJsonDocumentBuffer);
-				if (rc == NONE_ERROR) {
-					INFO("Update Shadow: %s", JsonDocumentBuffer);
-					rc = aws_iot_shadow_update(&mqttClient, AWS_IOT_MY_THING_NAME, JsonDocumentBuffer,
-							ShadowUpdateStatusCallback, NULL, 4, true);
+		if ((rc = aws_iot_shadow_begin_section(JsonDocumentBuffer, sizeOfJsonDocumentBuffer, ShadowSectionTypeReported)) != NONE_ERROR) {
+			break;
+		}
+
+		int i;
+		for (i = 0; i < supportedCommands.numCommands; ++i) {
+			OBDIICommand *command = supportedCommands.commands[i];
+
+			// Skip over the following commands
+			if (command == OBDIICommands.mode1SupportedPIDs_1_to_20 || command == OBDIICommands.mode1SupportedPIDs_21_to_40 || command == OBDIICommands.mode1SupportedPIDs_41_to_60 || command == OBDIICommands.mode9SupportedPIDs) {
+				continue;
+			}
+
+			OBDIIResponse response = OBDIIPerformQuery(s, command);
+
+			if (response.success) {
+				unsigned char mode = OBDIICommandGetMode(command);
+				unsigned char PID = OBDIICommandGetPID(command);
+
+				char propertyName[6];
+				propertyName[5] = '\0';
+				sprintf(propertyName, "%02x:%02x", mode, PID);
+
+				jsonStruct_t keyValuePair;
+				keyValuePair.cb = NULL;
+				keyValuePair.pKey = propertyName;
+
+				switch (command->responseType) {
+					case OBDIIResponseTypeNumeric:
+						keyValuePair.pData = &response.numericValue;
+						keyValuePair.type = SHADOW_JSON_FLOAT;
+						break;
+						
+					case OBDIIResponseTypeBitfield:
+						keyValuePair.pData = &response.bitfieldValue;
+						keyValuePair.type = SHADOW_JSON_UINT32;
+						break;
+
+					case OBDIIResponseTypeString:
+						keyValuePair.pData = response.stringValue;
+						keyValuePair.type = SHADOW_JSON_STRING;
+						break;
+				}
+
+				if ((rc = aws_iot_shadow_add_key_value_pair(JsonDocumentBuffer, sizeOfJsonDocumentBuffer, &keyValuePair)) != NONE_ERROR) {
+					OBDIIResponseFree(&response);
+					break;
 				}
 			}
+
+			OBDIIResponseFree(&response);
 		}
-		INFO("*****************************************************************************************\n");
+
+		if ((rc = aws_iot_shadow_end_section(JsonDocumentBuffer, sizeOfJsonDocumentBuffer)) != NONE_ERROR) {
+			break;
+		}
+
+		if ((rc = aws_iot_finalize_json_document(JsonDocumentBuffer, sizeOfJsonDocumentBuffer)) != NONE_ERROR) {
+			break;
+		}
+
+		INFO("Update Shadow: %s", JsonDocumentBuffer);
+		if ((rc = aws_iot_shadow_update(&mqttClient, thingNameOption.value, JsonDocumentBuffer, ShadowUpdateStatusCallback, NULL, 4, true)) != NONE_ERROR) {
+			break;
+		}
+
 		sleep(1);
 	}
 
@@ -302,7 +303,9 @@ int main(int argc, char** argv) {
 		ERROR("Disconnect error %d", rc);
 	}
 
-	close(s);
+	OBDIICloseSocket(s);
+
+	FreeCommandLineArgTemplateResources(argTemplates, sizeof(argTemplates)/sizeof(argTemplates[0]));
 
 	return rc;
 }

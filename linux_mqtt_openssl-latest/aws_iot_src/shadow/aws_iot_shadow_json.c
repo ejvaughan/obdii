@@ -75,6 +75,91 @@ IoT_Error_t aws_iot_shadow_init_json_document(char *pJsonDocument, size_t maxSiz
 
 }
 
+IoT_Error_t aws_iot_shadow_add_key_value_pair(char *pJsonDocument, size_t maxSizeOfJsonDocument, jsonStruct_t *keyValuePair)
+{
+	IoT_Error_t ret_val = NONE_ERROR;
+	int32_t tempSize = 0;
+	size_t remSizeOfJsonBuffer = maxSizeOfJsonDocument;
+	int32_t snPrintfReturn = 0;
+
+	if (pJsonDocument == NULL) {
+		return NULL_VALUE_ERROR;
+	}
+
+	tempSize = maxSizeOfJsonDocument - strlen(pJsonDocument);
+	if (tempSize <= 1){
+		return SHADOW_JSON_ERROR;
+	}
+	remSizeOfJsonBuffer = tempSize;
+
+	if (keyValuePair != NULL) {
+		snPrintfReturn = snprintf(pJsonDocument + strlen(pJsonDocument), remSizeOfJsonBuffer, "\"%s\":",
+				keyValuePair->pKey);
+		ret_val = checkReturnValueOfSnPrintf(snPrintfReturn, remSizeOfJsonBuffer);
+		if (ret_val != NONE_ERROR) {
+			return ret_val;
+		}
+		if (keyValuePair->pKey != NULL && keyValuePair->pData != NULL) {
+			ret_val = convertDataToString(pJsonDocument + strlen(pJsonDocument), remSizeOfJsonBuffer,
+					keyValuePair->type, keyValuePair->pData);
+		} else {
+			return NULL_VALUE_ERROR;
+		}
+		if (ret_val != NONE_ERROR) {
+			return ret_val;
+		}
+	} else {
+		return NULL_VALUE_ERROR;
+	}
+}
+
+IoT_Error_t aws_iot_shadow_begin_section(char *pJsonDocument, size_t maxSizeOfJsonDocument, ShadowSectionType section)
+{
+	IoT_Error_t ret_val = NONE_ERROR;
+	int32_t tempSize = 0;
+	size_t remSizeOfJsonBuffer = maxSizeOfJsonDocument;
+	int32_t snPrintfReturn = 0;
+
+	if (pJsonDocument == NULL) {
+		return NULL_VALUE_ERROR;
+	}
+
+	tempSize = maxSizeOfJsonDocument - strlen(pJsonDocument);
+	if(tempSize <= 1){
+		return SHADOW_JSON_ERROR;
+	}
+	remSizeOfJsonBuffer = tempSize;
+
+	snPrintfReturn = snprintf(pJsonDocument + strlen(pJsonDocument), remSizeOfJsonBuffer, (section == ShadowSectionTypeReported) ? "\"reported\":{" : "\"desired\":{");
+	ret_val = checkReturnValueOfSnPrintf(snPrintfReturn, remSizeOfJsonBuffer);
+
+	if (ret_val != NONE_ERROR) {
+		return ret_val;
+	}
+}
+
+IoT_Error_t aws_iot_shadow_end_section(char *pJsonDocument, size_t maxSizeOfJsonDocument)
+{
+	IoT_Error_t ret_val = NONE_ERROR;
+	int32_t tempSize = 0;
+	size_t remSizeOfJsonBuffer = maxSizeOfJsonDocument;
+	int32_t snPrintfReturn = 0;
+
+	if (pJsonDocument == NULL) {
+		return NULL_VALUE_ERROR;
+	}
+
+	tempSize = maxSizeOfJsonDocument - strlen(pJsonDocument);
+	if(tempSize <= 1){
+		return SHADOW_JSON_ERROR;
+	}
+	remSizeOfJsonBuffer = tempSize;
+
+	snPrintfReturn = snprintf(pJsonDocument + strlen(pJsonDocument) - 1, remSizeOfJsonBuffer, "},");
+	ret_val = checkReturnValueOfSnPrintf(snPrintfReturn, remSizeOfJsonBuffer);
+	return ret_val;
+}
+
 IoT_Error_t aws_iot_shadow_add_desired(char *pJsonDocument, size_t maxSizeOfJsonDocument, uint8_t count, ...) {
 	IoT_Error_t ret_val = NONE_ERROR;
 	int32_t tempSize = 0;

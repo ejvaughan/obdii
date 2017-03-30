@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Engine RPM</title>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <!-- Latest compiled JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <!-- css style sheet-->
+    <link rel = "stylesheet" type = "text/css" href = "style.css">
+    <!--icon -->
+    <link rel = "stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- show the RPM button used to connect to the shadow -->
+        <div class="RPM">
+            <button type="button" class = "btn btn-default" id = "connect"> RPMs </button>
+        </div>
+        <!-- show RPM number -->
+        <div class="well" id="rpm">
+            000
+        </div>
+        <!-- a progress bar -->
+        <div class="progress" id = "progress">
+            <div id="pbar" class="progress-bar progress-bar-striped active" role="progressbar" aira-valuenow="40" aria-valuemin="0" aira-valuemax="100" style="width:0%">
+            </div>
+        </div>
+    </div>
+
+
+    <script src="bundle.js"></script>
+</body>
+</html>

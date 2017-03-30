@@ -60,9 +60,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <errno.h>
 
 #include <linux/can.h>
-#include <linux/can/isotp.h>
 
 #include "OBDII.h"
 #include "OBDIICommunication.h"
@@ -77,25 +77,23 @@ void print_usage(char *program_name) {
 int main(int argc, char **argv)
 {
     int s;
-    struct sockaddr_can addr;
     int opt, i;
     extern int optind, opterr, optopt;
-
-    addr.can_addr.tp.tx_id = addr.can_addr.tp.rx_id = NO_CAN_ID;
+    canid_t tx_id = NO_CAN_ID, rx_id = NO_CAN_ID;
 
     while ((opt = getopt(argc, argv, "r:t:")) != -1) {
 	    switch (opt) {
 	    case 't':
-		    addr.can_addr.tp.tx_id = strtoul(optarg, (char **)NULL, 16);
+		    tx_id = strtoul(optarg, (char **)NULL, 16);
 		    if (strlen(optarg) > 7) {
-			    addr.can_addr.tp.tx_id |= CAN_EFF_FLAG;
+			    tx_id |= CAN_EFF_FLAG;
 		    }
 		    break;
 
 	    case 'r':
-		    addr.can_addr.tp.rx_id = strtoul(optarg, (char **)NULL, 16);
+		    rx_id = strtoul(optarg, (char **)NULL, 16);
 		    if (strlen(optarg) > 7) {
-			    addr.can_addr.tp.rx_id |= CAN_EFF_FLAG;
+			    rx_id |= CAN_EFF_FLAG;
 	            }
 		    break;
 
@@ -108,53 +106,66 @@ int main(int argc, char **argv)
     }
 
     if ((argc - optind != 1) ||
-	(addr.can_addr.tp.tx_id == NO_CAN_ID) ||
-	(addr.can_addr.tp.rx_id == NO_CAN_ID)) {
+	(tx_id == NO_CAN_ID) ||
+	(rx_id == NO_CAN_ID)) {
 	    print_usage(basename(argv[0]));
 	    exit(1);
     }
 
-    if ((s = socket(PF_CAN, SOCK_DGRAM, CAN_ISOTP)) < 0) {
-		perror("socket");
-		exit(1);
+    if ((s = OBDIIOpenSocket(argv[optind], tx_id, rx_id)) < 0) {
+	printf("Error connecting to vehicle: %s\n", strerror(errno));
+    	exit(EXIT_FAILURE);
     }
+    
+    printf("Supported commands:\n");
 
-    addr.can_family = AF_CAN;
-    addr.can_ifindex = if_nametoindex(argv[optind]);
+	OBDIICommandSet supportedCommands = OBDIIGetSupportedCommands(s);
 
-    if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-		perror("bind");
-		close(s);
-		exit(1);
-    }
-
-    // OBDIIResponse dtcResponse = OBDIIPerformQuery(s, OBDIICommands.getDTCs);
-
-    // for (i = 0; i < dtcResponse.numDTCs; ++i) {
-    // 	printf("%s", dtcResponse.DTCs[i]);
-    // }
-
-    // OBDIIResponseFree(dtcResponse);
-
-    OBDIIResponse dtcResponse = OBDIIPerformQuery(s, OBDIICommands.VIN);
-    printf("VIN: %s\n", dtcResponse.stringValue);
-    OBDIIResponseFree(dtcResponse);
+	for (i = 0; i < supportedCommands.numCommands; ++i) {
+		OBDIICommand *command = supportedCommands.commands[i];
+		printf("%i: mode %02x, PID %02x: %s\n", i, OBDIICommandGetMode(command), OBDIICommandGetPID(command), command->name);
+	}
 
     while (1) {
-	    // Send a request for the engine RPMs
-	    OBDIIResponse response = OBDIIPerformQuery(s, OBDIICommands.engineRPMs);
-	    printf("Engine RPMs: %f\n", response.floatValue);
+	printf("> "); // Print prompt
 
-	    response = OBDIIPerformQuery(s, OBDIICommands.engineCoolantTemperature);
-	    printf("Engine coolant temperature (Celsius): %i\n", response.floatValue);
+	// Get user's selection
+	int selection;
+	scanf("%d", &selection);
 
-	    response = OBDIIPerformQuery(s, OBDIICommands.calculatedEngineLoad);
-	    printf("Calculated engine load: %f\n", response.floatValue);
+	if (selection >= 0 && selection < supportedCommands.numCommands) {
+		OBDIICommand *command = supportedCommands.commands[selection];
 
-	    sleep(1);
+		printf("Querying mode %02x PID %02x...\n", OBDIICommandGetMode(command), OBDIICommandGetPID(command));
+		OBDIIResponse response = OBDIIPerformQuery(s, command);
+
+		if (response.success) {
+			printf("Retrieved: ");
+
+			if (command->responseType == OBDIIResponseTypeNumeric) {
+				printf("%.2f", response.numericValue);
+			} else if (command->responseType == OBDIIResponseTypeBitfield) {
+				printf("%08x", response.bitfieldValue);
+			} else if (command->responseType == OBDIIResponseTypeString) {
+				printf("%s", response.stringValue);
+			} else if (command->responseType == OBDIIResponseTypeOther) {
+				printf("Unimplemented!");
+			}
+
+			printf("\n");
+		} else {
+			printf("Error retrieving data. Please try again!\n");
+		}
+		
+		OBDIIResponseFree(&response);
+	} else {
+		printf("%d is not a valid command!\n", selection);
+	}
    }
 
-    close(s);
+    OBDIICommandSetFree(&supportedCommands);
+
+    OBDIICloseSocket(s);
 
     return 0;
 }
