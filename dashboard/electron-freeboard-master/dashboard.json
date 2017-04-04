@@ -1,0 +1,146 @@
+{
+	"version": 1,
+	"allow_edit": true,
+	"plugins": [],
+	"panes": [
+		{
+			"width": 1,
+			"row": {
+				"3": 1
+			},
+			"col": {
+				"3": 2
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "radial-gauge",
+					"settings": {
+						"title": "Engine Rpms",
+						"value": "datasources[\"CSE521s\"][\"01:0c\"]",
+						"min_value": 0,
+						"max_value": "8000"
+					}
+				}
+			]
+		},
+		{
+			"width": 1,
+			"row": {
+				"3": 1
+			},
+			"col": {
+				"3": 3
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "radial-gauge",
+					"settings": {
+						"title": "Speed",
+						"value": "datasources[\"CSE521s\"][\"01:0d\"]",
+						"units": "mph",
+						"min_value": 0,
+						"max_value": "120"
+					}
+				}
+			]
+		},
+		{
+			"width": 1,
+			"row": {
+				"3": 9
+			},
+			"col": {
+				"3": 3
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "text_widget",
+					"settings": {
+						"title": "System Uptime",
+						"size": "regular",
+						"value": "datasources[\"CSE521s\"][\"01:1f\"]",
+						"animate": true,
+						"units": "seconds"
+					}
+				}
+			]
+		},
+		{
+			"width": 1,
+			"row": {
+				"3": 9
+			},
+			"col": {
+				"3": 2
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "vertical-linear-gauge",
+					"settings": {
+						"title": "Coolant Temperature",
+						"value": "datasources[\"CSE521s\"][\"01:05\"]",
+						"units": "C",
+						"min_value": -40,
+						"max_value": 215
+					}
+				}
+			]
+		},
+		{
+			"width": 1,
+			"row": {
+				"3": 9
+			},
+			"col": {
+				"3": 1
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "horizontal-linear-gauge",
+					"settings": {
+						"title": "Fuel Level",
+						"value": "datasources[\"CSE521s\"][\"01:2f\"]",
+						"units": "%",
+						"min_value": 0,
+						"max_value": 100
+					}
+				}
+			]
+		},
+		{
+			"width": 1,
+			"row": {
+				"3": 1
+			},
+			"col": {
+				"3": 1
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "radial-gauge",
+					"settings": {
+						"title": "Pedal Position",
+						"value": "datasources[\"CSE521s\"][\"01:49\"]",
+						"units": "%",
+						"min_value": 0,
+						"max_value": 100
+					}
+				}
+			]
+		}
+	],
+	"datasources": [
+		{
+			"name": "CSE521s",
+			"type": "cse521_car",
+			"settings": {}
+		}
+	],
+	"columns": 3
+}
