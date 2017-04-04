@@ -1,0 +1,81 @@
+{
+	"version": 1,
+	"allow_edit": true,
+	"plugins": [],
+	"panes": [
+		{
+			"title": "VOLTAGE",
+			"width": 1,
+			"row": {
+				"1": 1,
+				"2": 1,
+				"3": 1
+			},
+			"col": {
+				"1": 1,
+				"2": 1,
+				"3": 3
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "vertical-linear-gauge",
+					"settings": {
+						"value": "92",
+						"units": "degrees",
+						"min_value": 0,
+						"max_value": 120
+					}
+				}
+			]
+		},
+		{
+			"title": "PITCH",
+			"width": 1,
+			"row": {
+				"2": 1,
+				"3": 1
+			},
+			"col": {
+				"2": 2,
+				"3": 2
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "radial-gauge",
+					"settings": {
+						"value": "14",
+						"units": "degrees",
+						"min_value": "-60",
+						"max_value": "60"
+					}
+				}
+			]
+		},
+		{
+			"title": "RX CHANNEL",
+			"width": 1,
+			"row": {
+				"3": 1
+			},
+			"col": {
+				"3": 1
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "horizontal-linear-gauge",
+					"settings": {
+						"value": "1285",
+						"units": "pulsewidth",
+						"min_value": 1000,
+						"max_value": 2000
+					}
+				}
+			]
+		}
+	],
+	"datasources": [],
+	"columns": 3
+}

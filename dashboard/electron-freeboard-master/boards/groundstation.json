@@ -1,0 +1,457 @@
+{
+	"version": 1,
+	"allow_edit": true,
+	"plugins": [],
+	"panes": [
+		{
+			"title": "ARTIFICIAL HORIZON",
+			"width": 1,
+			"row": {
+				"2": 9,
+				"3": 1,
+				"4": 1,
+				"5": 1
+			},
+			"col": {
+				"2": 1,
+				"3": 1,
+				"4": 1,
+				"5": 1
+			},
+			"col_width": 2,
+			"widgets": [
+				{
+					"type": "artificial-horizon",
+					"settings": {
+						"roll": "datasources[\"TELEMETRY\"][0]",
+						"pitch": "datasources[\"TELEMETRY\"][1]"
+					}
+				}
+			]
+		},
+		{
+			"title": "CURRENT",
+			"width": 1,
+			"row": {
+				"3": 1,
+				"4": 9,
+				"5": 1,
+				"6": 1
+			},
+			"col": {
+				"3": 3,
+				"4": 3,
+				"5": 4,
+				"6": 4
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "vertical-linear-gauge",
+					"settings": {
+						"value": "78",
+						"units": "amps",
+						"min_value": 0,
+						"max_value": "120"
+					}
+				}
+			]
+		},
+		{
+			"title": "VOLTAGE",
+			"width": 1,
+			"row": {
+				"3": 9,
+				"4": 1,
+				"5": 1,
+				"6": 1
+			},
+			"col": {
+				"3": 3,
+				"4": 3,
+				"5": 3,
+				"6": 3
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "vertical-linear-gauge",
+					"settings": {
+						"value": "datasources[\"TELEMETRY\"][3]",
+						"units": "volts",
+						"min_value": "12.8",
+						"max_value": "15.2"
+					}
+				}
+			]
+		},
+		{
+			"title": "FLIGHT TIME",
+			"width": 1,
+			"row": {
+				"3": 17,
+				"4": 1,
+				"5": 1,
+				"6": 1
+			},
+			"col": {
+				"3": 1,
+				"4": 4,
+				"5": 5,
+				"6": 5
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "text_widget",
+					"settings": {
+						"title": "",
+						"size": "regular",
+						"value": "3 min 47 sec",
+						"animate": true,
+						"units": ""
+					}
+				}
+			]
+		},
+		{
+			"title": "MOTORS",
+			"width": 1,
+			"row": {
+				"3": 17,
+				"4": 5,
+				"5": 5,
+				"6": 5
+			},
+			"col": {
+				"3": 2,
+				"4": 4,
+				"5": 5,
+				"6": 5
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "indicator",
+					"settings": {
+						"value": "1",
+						"on_text": "ARMED",
+						"off_text": "DISARMED"
+					}
+				}
+			]
+		},
+		{
+			"title": "ROLL",
+			"width": 1,
+			"row": {
+				"2": 1,
+				"3": 17,
+				"4": 9,
+				"5": 9,
+				"6": 9
+			},
+			"col": {
+				"2": 2,
+				"3": 3,
+				"4": 4,
+				"5": 3,
+				"6": 3
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "radial-gauge",
+					"settings": {
+						"title": "",
+						"value": "datasources[\"TELEMETRY\"][0]",
+						"units": "degrees",
+						"min_value": "-60",
+						"max_value": "60"
+					}
+				}
+			]
+		},
+		{
+			"title": "POSITION",
+			"width": 1,
+			"row": {
+				"3": 21,
+				"4": 17,
+				"5": 17,
+				"6": 17
+			},
+			"col": {
+				"3": 1,
+				"4": 1,
+				"5": 4,
+				"6": 4
+			},
+			"col_width": 2,
+			"widgets": [
+				{
+					"type": "google_map",
+					"settings": {
+						"position": "datasources[\"GPS\"]",
+						"show_path": true
+					}
+				}
+			]
+		},
+		{
+			"title": "PITCH",
+			"width": 1,
+			"row": {
+				"2": 33,
+				"3": 25,
+				"4": 17,
+				"5": 9,
+				"6": 9
+			},
+			"col": {
+				"2": 1,
+				"3": 3,
+				"4": 4,
+				"5": 4,
+				"6": 4
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "radial-gauge",
+					"settings": {
+						"value": "datasources[\"TELEMETRY\"][1]",
+						"units": "degrees",
+						"min_value": "-60",
+						"max_value": "60"
+					}
+				}
+			]
+		},
+		{
+			"title": "YAW",
+			"width": 1,
+			"row": {
+				"2": 25,
+				"3": 33,
+				"4": 25,
+				"5": 9,
+				"6": 9
+			},
+			"col": {
+				"2": 1,
+				"3": 3,
+				"4": 4,
+				"5": 5,
+				"6": 5
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "pointer",
+					"settings": {
+						"direction": "datasources[\"TELEMETRY\"][2]",
+						"value_text": "datasources[\"TELEMETRY\"][2]",
+						"units": "degrees"
+					}
+				}
+			]
+		},
+		{
+			"title": "RX CHANNEL 3",
+			"width": 1,
+			"row": {
+				"3": 37,
+				"4": 33,
+				"5": 17,
+				"7": 17
+			},
+			"col": {
+				"3": 1,
+				"4": 4,
+				"5": 3,
+				"7": 3
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "horizontal-linear-gauge",
+					"settings": {
+						"value": "datasources[\"CHANNELS\"][2]",
+						"min_value": 1000,
+						"max_value": 2000
+					}
+				}
+			]
+		},
+		{
+			"title": "RX CHANNEL 6",
+			"width": 1,
+			"row": {
+				"3": 37,
+				"4": 33,
+				"5": 25,
+				"7": 25
+			},
+			"col": {
+				"3": 2,
+				"4": 3,
+				"5": 3,
+				"7": 3
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "horizontal-linear-gauge",
+					"settings": {
+						"value": "datasources[\"CHANNELS\"][5]",
+						"min_value": 1000,
+						"max_value": 2000
+					}
+				}
+			]
+		},
+		{
+			"title": "RX CHANNEL 1",
+			"width": 1,
+			"row": {
+				"3": 41,
+				"4": 17,
+				"5": 17,
+				"7": 17
+			},
+			"col": {
+				"3": 3,
+				"4": 3,
+				"5": 1,
+				"7": 1
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "horizontal-linear-gauge",
+					"settings": {
+						"title": "",
+						"value": "datasources[\"CHANNELS\"][0]",
+						"units": "",
+						"min_value": 1000,
+						"max_value": 2000
+					}
+				}
+			]
+		},
+		{
+			"title": "RX CHANNEL 5",
+			"width": 1,
+			"row": {
+				"3": 45,
+				"4": 41,
+				"5": 25,
+				"7": 25
+			},
+			"col": {
+				"3": 1,
+				"4": 3,
+				"5": 2,
+				"7": 2
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "horizontal-linear-gauge",
+					"settings": {
+						"value": "datasources[\"CHANNELS\"][4]",
+						"min_value": 1000,
+						"max_value": 2000
+					}
+				}
+			]
+		},
+		{
+			"title": "RX CHANNEL 2",
+			"width": 1,
+			"row": {
+				"3": 49,
+				"4": 25,
+				"5": 17,
+				"7": 17
+			},
+			"col": {
+				"3": 3,
+				"4": 3,
+				"5": 2,
+				"7": 2
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "horizontal-linear-gauge",
+					"settings": {
+						"value": "datasources[\"CHANNELS\"][1]",
+						"min_value": 1000,
+						"max_value": 2000
+					}
+				}
+			]
+		},
+		{
+			"title": "RX CHANNEL 4",
+			"width": 1,
+			"row": {
+				"3": 57,
+				"4": 41,
+				"5": 25,
+				"7": 25
+			},
+			"col": {
+				"3": 3,
+				"4": 4,
+				"5": 1,
+				"7": 1
+			},
+			"col_width": 1,
+			"widgets": [
+				{
+					"type": "horizontal-linear-gauge",
+					"settings": {
+						"value": "datasources[\"CHANNELS\"][3]",
+						"min_value": 1000,
+						"max_value": 2000
+					}
+				}
+			]
+		}
+	],
+	"datasources": [
+		{
+			"name": "TELEMETRY",
+			"type": "playback",
+			"settings": {
+				"datafile": "data/telemetry.json",
+				"loop": true,
+				"refresh": 0.5
+			}
+		},
+		{
+			"name": "CHANNELS",
+			"type": "random",
+			"settings": {
+				"refresh": 0.5,
+				"num_values": 6,
+				"precision": 1,
+				"min_value": 1000,
+				"max_value": 2000
+			}
+		},
+		{
+			"name": "GPS",
+			"type": "playback",
+			"settings": {
+				"datafile": "data/flightpath.json",
+				"loop": true,
+				"refresh": 0.5
+			}
+		}
+	],
+	"columns": 5
+}
