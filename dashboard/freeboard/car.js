@@ -1,5 +1,4 @@
-(function()
-{
+(function() {
 	// ## A Datasource Plugin
 	//
 	// -------------------
@@ -16,6 +15,7 @@
         "description" : "",
 		// **external_scripts** : Any external scripts that should be loaded before the plugin instance is created.
 		"external_scripts" : [
+			"http://mydomain.com/myscript1.js"
 		],
 		// **settings** : An array of settings that will be displayed for this plugin when the user adds it.
 		"settings"    : [
@@ -24,9 +24,10 @@
 		// * **settings** : A javascript object with the initial settings set by the user. The names of the properties in the object will correspond to the setting names defined above.
 		// * **newInstanceCallback** : A callback function that you'll call when the new instance of the plugin is ready. This function expects a single argument, which is the new instance of your plugin object.
 		// * **updateCallback** : A callback function that you'll call if and when your datasource has an update for freeboard to recalculate. This function expects a single parameter which is a javascript object with the new, updated data. You should hold on to this reference and call it when needed.
-		newInstance   : function(settings, newInstanceCallback, updateCallback)
+		"newInstance"   : function(settings, newInstanceCallback, updateCallback)
 		{
 			// Car is defined below.
+			console.log("Creating new car instance");
 			newInstanceCallback(new Car(settings, updateCallback));
 		}
 	});
@@ -138,7 +139,7 @@
 
 		shadows.on('delta', function(name, stateObject) {
 			console.log("Received shadow state delta: " + stateObject.state);
-			updateCallback(stateObject.state);
+			updateCallback(stateObject.state.reported);
 		});
 
 		shadows.on('status', function(name, statusType, clientToken, stateObject) {
@@ -158,6 +159,7 @@
 		      }
 		   } else { // statusType === 'accepted'
 			      console.log("Received shadow state status update " + stateObject.state);
+			   updateCallback(stateObject.state.reported);
 		   }
 		});
 

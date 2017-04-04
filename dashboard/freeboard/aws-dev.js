@@ -19,9 +19,9 @@
 // the AWS IoT SDK for JavaScript (aws-iot-device-sdk) is used for the
 // WebSocket connection to AWS IoT and device shadow APIs.
 //
-var AWS = require('aws-sdk');
-var AWSIoTData = require('aws-iot-device-sdk');
-var AWSConfiguration = require('./aws-configuration.js');
+window.AWS = require('aws-sdk');
+window.AWSIoTData = require('aws-iot-device-sdk');
+window.AWSConfiguration = require('./aws-configuration.js');
 
 console.log('Loaded AWS SDK for JavaScript and AWS IoT SDK for Node.js');
 
