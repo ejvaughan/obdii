@@ -142,6 +142,11 @@
 			updateCallback(stateObject.state.reported);
 		});
 
+		shadows.on('foreignStateChange', function(name, operation, stateObject) {
+			console.log("Received shadow state update: " + stateObject.state);
+			updateCallback(stateObject.state.reported);
+		});
+
 		shadows.on('status', function(name, statusType, clientToken, stateObject) {
 		   if (statusType === 'rejected') {
 		      //
