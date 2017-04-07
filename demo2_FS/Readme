@@ -1,5 +1,0 @@
-How to run ?
-1. clone the "freeboard" repo to the mqqt-explorer folder
-2. put these two scripts into "freeboard"
-3. At the parent folder, run "npm run-script browserize  ......". Make sure the credential file is also included.
-4. open "index.html"
