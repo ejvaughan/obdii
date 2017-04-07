@@ -60,6 +60,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <signal.h>
 #include <errno.h>
 
 #include <linux/can.h>
@@ -70,8 +71,15 @@
 #define NO_CAN_ID 0xFFFFFFFFU
 #define BUFSIZE 5000 /* size > 4095 to check socket API internal checks */
 
+int interrupted = 0;
+
 void print_usage(char *program_name) {
 	printf("Usage: %s -t <transfer CAN ID> -r <receive CAN ID> <CAN interface>\n	<transfer CAN ID>: The CAN ID that will be used for sending the diagnostic requests. For 11-bit identifiers, this can be either the broadcast ID, 0x7DF, or an ID in the range 0x7E0 to 0x7E7, indicating a particular ECU.\n	<receive CAN ID>: The CAN ID that the ECU will be using to respond to the diagnostic requests that are sent. For 11-bit identifiers, this is an ID in the range 0x7E8 to 0x7EF (i.e. <transfer CAN ID> + 8)\n", program_name);
+}
+
+void handleInterrupted(int signum)
+{
+	interrupted = 1;
 }
 
 int main(int argc, char **argv)
@@ -112,6 +120,14 @@ int main(int argc, char **argv)
 	    exit(1);
     }
 
+    // Install SIGINT handler
+    struct sigaction interruptSignalAction;
+    sigemptyset(&interruptSignalAction.sa_mask);
+    interruptSignalAction.sa_flags = 0;
+    interruptSignalAction.sa_handler = &handleInterrupted;
+
+    sigaction(SIGINT, &interruptSignalAction, NULL);
+
     if ((s = OBDIIOpenSocket(argv[optind], tx_id, rx_id)) < 0) {
 	printf("Error connecting to vehicle: %s\n", strerror(errno));
     	exit(EXIT_FAILURE);
@@ -127,39 +143,65 @@ int main(int argc, char **argv)
 	}
 
     while (1) {
-	printf("> "); // Print prompt
+	// Print prompt
+	printf("> "); 
 
 	// Get user's selection
+	char line[20];
+	if (!fgets(line, sizeof(line), stdin)) {
+		break;
+	}
+
 	int selection;
-	scanf("%d", &selection);
+	char flag[3];
+	int numScanned;
 
-	if (selection >= 0 && selection < supportedCommands.numCommands) {
-		OBDIICommand *command = supportedCommands.commands[selection];
+	if ((numScanned = sscanf(line, "%d %2s", &selection, flag)) > 0) {
+		int repeatQuery = numScanned == 2 && strcmp(flag, "-p") == 0;
 
-		printf("Querying mode %02x PID %02x...\n", OBDIICommandGetMode(command), OBDIICommandGetPID(command));
-		OBDIIResponse response = OBDIIPerformQuery(s, command);
+		if (selection >= 0 && selection < supportedCommands.numCommands) {
+			OBDIICommand *command = supportedCommands.commands[selection];
 
-		if (response.success) {
-			printf("Retrieved: ");
+			printf("Querying mode %02x PID %02x...\n", OBDIICommandGetMode(command), OBDIICommandGetPID(command));
 
-			if (command->responseType == OBDIIResponseTypeNumeric) {
-				printf("%.2f", response.numericValue);
-			} else if (command->responseType == OBDIIResponseTypeBitfield) {
-				printf("%08x", response.bitfieldValue);
-			} else if (command->responseType == OBDIIResponseTypeString) {
-				printf("%s", response.stringValue);
-			} else if (command->responseType == OBDIIResponseTypeOther) {
-				printf("Unimplemented!");
-			}
+			do {
+				OBDIIResponse response = OBDIIPerformQuery(s, command);
 
-			printf("\n");
+				if (response.success) {
+					printf("Retrieved: ");
+
+					if (command->responseType == OBDIIResponseTypeNumeric) {
+						printf("%.2f", response.numericValue);
+					} else if (command->responseType == OBDIIResponseTypeBitfield) {
+						printf("%08x", response.bitfieldValue);
+					} else if (command->responseType == OBDIIResponseTypeString) {
+						printf("%s", response.stringValue);
+					} else if (command->responseType == OBDIIResponseTypeOther) {
+						printf("Unimplemented!");
+					}
+
+					printf("\n");
+				} else {
+					printf("Error retrieving data. Please try again!\n");
+				}
+				
+				OBDIIResponseFree(&response);
+
+				if (repeatQuery) {
+					sleep(1);
+
+					if (interrupted) {
+						// We received SIGINT signal, so break out of loop
+						interrupted = 0;
+						break;
+					}
+				}
+			} while (repeatQuery);
 		} else {
-			printf("Error retrieving data. Please try again!\n");
+			printf("%d is not a valid command!\n", selection);
 		}
-		
-		OBDIIResponseFree(&response);
 	} else {
-		printf("%d is not a valid command!\n", selection);
+		printf("Invalid input!\n");
 	}
    }
 
