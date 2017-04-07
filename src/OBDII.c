@@ -170,6 +170,11 @@ void OBDIIDecodeSingleByteBitfield(OBDIIResponse *response, unsigned char *respo
 	response->bitfieldValue = responsePayload[2];
 }
 
+void OBDIIDecodeTwoByteBitfield(OBDIIResponse *response, unsigned char *responsePayload, int payloadLen) 
+{
+	response->bitfieldValue = responsePayload[2] << 8 | responsePayload[3];
+}
+
 void OBDIIDecodeUInt16(OBDIIResponse *response, unsigned char *responsePayload, int payloadLen)
 {
 	response->numericValue = responsePayload[2] << 8 | responsePayload[3];
@@ -232,6 +237,10 @@ void OBDIIDecodeFuelAirEquivalence(OBDIIResponse *response, unsigned char *respo
 	response->numericValue = 2.0 / 65536.0 * (responsePayload[2] << 8 | responsePayload[3]);
 }
 
+void OBDIIDecodeNop(OBDIIResponse *response, unsigned char *responsePayload, int payloadLen)
+{
+}
+
 OBDIIResponse OBDIIDecodeResponseForCommand(OBDIICommand *command, unsigned char *payload, int len)
 {
 	OBDIIResponse response = { 0 };
@@ -265,9 +274,9 @@ void OBDIIResponseFree(OBDIIResponse *response)
 
 OBDIICommand OBDIIMode1Commands[] = {
 	{ "Supported PIDs in the range 01 - 20", { 0x01, 0x00 }, OBDIIResponseTypeBitfield, 6, &OBDIIDecodeBitfield },
-	{ "Monitor status since DTCs cleared", { 0x01, 0x01 }, OBDIIResponseTypeBitfield, 6, NULL },
-	{ "Freeze DTC", { 0x01, 0x02 }, OBDIIResponseTypeOther, 4, NULL },
-	{ "Fuel system status", { 0x01, 0x03 }, OBDIIResponseTypeBitfield, 4, NULL },
+	{ "Monitor status since DTCs cleared", { 0x01, 0x01 }, OBDIIResponseTypeBitfield, 6, &OBDIIDecodeBitfield },
+	{ "Freeze DTC", { 0x01, 0x02 }, OBDIIResponseTypeOther, 4, &OBDIIDecodeNop },
+	{ "Fuel system status", { 0x01, 0x03 }, OBDIIResponseTypeBitfield, 4, &OBDIIDecodeTwoByteBitfield },
 	{ "Calculated engine load", { 0x01, 0x04 }, OBDIIResponseTypeNumeric, 3, &OBDIIDecodePercentage },
 	{ "Engine coolant temperature", { 0x01, 0x05 }, OBDIIResponseTypeNumeric, 3, &OBDIIDecodeTemperature },
 	{ "Short term fuel trim—Bank 1", { 0x01, 0x06}, OBDIIResponseTypeNumeric, 3, &OBDIIDecodeFuelTrim },
