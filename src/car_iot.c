@@ -94,7 +94,7 @@
 #include "OBDII.h"
 #include "OBDIICommunication.h"
 
-#define MAX_LENGTH_OF_UPDATE_JSON_BUFFER 200
+#define MAX_LENGTH_OF_UPDATE_JSON_BUFFER 1000
 
 void PrintUsage(char *program_name) {
 	printf("Usage: %s -t <transfer CAN ID> -r <receive CAN ID> <CAN interface>\n	<transfer CAN ID>: The CAN ID that will be used for sending the diagnostic requests. For 11-bit identifiers, this can be either the broadcast ID, 0x7DF, or an ID in the range 0x7E0 to 0x7E7, indicating a particular ECU.\n	<receive CAN ID>: The CAN ID that the ECU will be using to respond to the diagnostic requests that are sent. For 11-bit identifiers, this is an ID in the range 0x7E8 to 0x7EF (i.e. <transfer CAN ID> + 8)\n", program_name);
@@ -231,10 +231,12 @@ int main(int argc, char** argv) {
 		for (i = 0; i < supportedCommands.numCommands; ++i) {
 			OBDIICommand *command = supportedCommands.commands[i];
 
-			// Skip over the following commands
-			if (command == OBDIICommands.mode1SupportedPIDs_1_to_20 || command == OBDIICommands.mode1SupportedPIDs_21_to_40 || command == OBDIICommands.mode1SupportedPIDs_41_to_60 || command == OBDIICommands.mode9SupportedPIDs) {
+			// Skip over commands we don't care about
+			if (!(command == OBDIICommands.engineRPMs || command == OBDIICommands.vehicleSpeed || command == OBDIICommands.fuelTankLevelInput || command == OBDIICommands.engineCoolantTemperature || command == OBDIICommands.runtimeSinceEngineStart || command == OBDIICommands.acceleratorPedalPositionD)) {
 				continue;
 			}
+
+			printf("Querying car for command: %s...\n", command->name);
 
 			OBDIIResponse response = OBDIIPerformQuery(s, command);
 
