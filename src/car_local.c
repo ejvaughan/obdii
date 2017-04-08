@@ -153,11 +153,13 @@ int main(int argc, char **argv)
 	}
 
 	int selection;
-	char flag[3];
+	char option[3];
+	char optionArg[11];
 	int numScanned;
 
-	if ((numScanned = sscanf(line, "%d %2s", &selection, flag)) > 0) {
-		int repeatQuery = numScanned == 2 && strcmp(flag, "-p") == 0;
+	if ((numScanned = sscanf(line, "%d %2s %10s", &selection, option, optionArg)) > 0) {
+		int repeatQuery = numScanned == 2 && strcmp(option, "-p") == 0;
+		int repeatInterval = (repeatQuery && numScanned == 3) ? atoi(optionArg) : 1000; // milliseconds
 
 		if (selection >= 0 && selection < supportedCommands.numCommands) {
 			OBDIICommand *command = supportedCommands.commands[selection];
@@ -188,7 +190,11 @@ int main(int argc, char **argv)
 				OBDIIResponseFree(&response);
 
 				if (repeatQuery) {
-					sleep(1);
+					struct timespec delay;
+					delay.tv_sec = repeatInterval / 1000;
+					delay.tv_nsec = (repeatInterval % 1000) * 1000000;
+
+					nanosleep(&delay, NULL);
 
 					if (interrupted) {
 						// We received SIGINT signal, so break out of loop
