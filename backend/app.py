@@ -4,6 +4,7 @@ from user import User
 from thing import Thing
 from flask_login import login_user, login_required, current_user
 import json
+from utils import owns_trigger
 import boto3
 from botocore.exceptions import ClientError
 import logging
@@ -136,4 +137,35 @@ def pair():
 
     return jsonify(success=True)
 
-    
+@app.route('/triggers', methods=['GET', 'POST'])
+@login_required
+def triggers():
+    if request.method == 'POST':
+        # create a new trigger 
+       pass 
+    else:
+        pass
+
+@app.route('/triggers/<int:triggerID>', methods=['GET', 'DELETE'])
+@login_required
+@owns_trigger(triggerID)
+def getOrDeleteTrigger(triggerID):
+    if request.method == 'DELETE':
+        # delete the trigger
+        pass
+    else:
+        pass
+         
+@app.route('/triggers/<int:triggerID>/target', methods=['POST'])
+@login_required
+@owns_trigger(triggerID)
+def createTriggerTarget(triggerID):
+    # create trigger target
+    pass
+
+@app.route('/targets/<int:targetID>', methods=['DELETE'])
+@login_required
+@owns_trigger_target(targetID)
+def deleteTriggerTarget(targetID):
+    # delete trigger target
+    pass

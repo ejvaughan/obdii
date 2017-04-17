@@ -1,5 +1,6 @@
 from base import db, bcrypt
 from flask_login import UserMixin
+from trigger import Trigger
 
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
@@ -8,7 +9,8 @@ class User(db.Model, UserMixin):
     cognitoID = db.Column(db.String(length=100), nullable=False)
     email = db.Column(db.String(length=100), unique=True, nullable=False)
     password = db.Column(db.String(length=100), nullable=False)
-    things = db.relationship('Thing', backref='user')
+    things = db.relationship('Thing', backref='user', cascade='all, delete, delete-orphan')
+    triggers = db.relationship('Trigger', backref='user', cascade='all, delete, delete-orphan')
 
     def __init__(self, email, password):
         self.email = email
