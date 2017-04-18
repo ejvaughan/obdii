@@ -2,9 +2,10 @@ from base import *
 from flask import jsonify, request, abort
 from user import User
 from thing import Thing
+from trigger import Trigger, TriggerSchema
+from trigger_target import TriggerTarget, TriggerTargetSchema
 from flask_login import login_user, login_required, current_user
 import json
-from utils import owns_trigger
 import boto3
 from botocore.exceptions import ClientError
 import logging
@@ -26,7 +27,7 @@ def login():
     email = request.form['email']
     password = request.form['password']
 
-    user = db.session.query(User).filter(User.email == email).one_or_none()
+    user = User.query.filter(User.email == email).one_or_none()
     if user is None:
         return jsonify(success=False, message="Invalid username/password")
 
@@ -61,7 +62,7 @@ def register():
         return jsonify(success=False, message="Invalid username/password")
 
     # check if a user with this email already exists
-    existing = db.session.query(User).filter(User.email == email).one_or_none()
+    existing = User.query.filter(User.email == email).one_or_none()
     if existing is not None:
         return jsonify(success=False, message="A user with this email already exists")
 
@@ -142,30 +143,169 @@ def pair():
 def triggers():
     if request.method == 'POST':
         # create a new trigger 
-       pass 
+        d = request.get_json()
+        thingName = d.get('thing')
+        if thingName is None:
+            return jsonify(success=False, message='Must supply a thing name')
+
+        del d['thing']
+
+        # check if there is a thing with this name associated w/ the user
+        thing = Thing.query.filter(Thing.name == thingName, Thing.userID == current_user.id).one_or_none()
+        if thing is None:
+            return jsonify(success=False, message='A thing with this name does not exist')
+
+        triggerSchema = TriggerSchema()
+        trigger, errors = TriggerSchema.load(d)
+        if errors:
+            return jsonify(success=False, error=errors)
+
+        trigger.user = current_user
+        trigger.thing = thing
+
+        db.session.add(trigger)
+        db.session.commit()
+        
+        # create SNS topic
+        sns = boto3.client('sns')
+
+        try:
+            r = sns.create_topic(Name=str(trigger.id))
+        except ClientError as e:
+            # clean up
+            db.session.delete(trigger)
+            db.session.commit()
+            logger.debug('Error creating SNS topic: {}'.format(e))
+            return jsonify(success=False, message='Unable to create SNS topic')
+
+        trigger.snsTopic = r['TopicArn']
+        trigger.iotRuleName = str(trigger.id)
+        db.session.commit()
+        logger.debug('Created topic with ARN: {}'.format(trigger.snsTopic))
+        
+        # create IoT rule
+        iot = boto3.client('iot')
+
+        # build SQL string for rule
+        sql = '' 
+        try:
+            r = iot.create_topic_rule(
+                ruleName=str(trigger.id),
+                topicRulePayload=dict(
+                    sql=sql,
+                    actions=[dict(
+                        sns=dict(
+                            targetArn=trigger.snsTopic,
+                            roleArn=''
+                        )
+                    )]
+                )
+            )
+        except ClientError as e:
+            logger.debug('Error creating IoT rule: {}'.format(e))
+            # clean up
+            try:
+                sns.delete_topic(TopicArn=trigger.snsTopic)
+            except ClientError as deleteError:
+                pass
+            db.session.delete(trigger)
+            db.session.commit()
+            return jsonify(success=False, message='Unable to create IoT rule')
+
+        return jsonify(success=True, trigger=triggerSchema.dump(trigger)) 
     else:
-        pass
+        triggerSchema = TriggerSchema(many=True)
+        return jsonify(success=True, triggers=triggerSchema.dump(Trigger.query.filter_by(userID=current_user.id).all()))
 
 @app.route('/triggers/<int:triggerID>', methods=['GET', 'DELETE'])
 @login_required
-@owns_trigger(triggerID)
 def getOrDeleteTrigger(triggerID):
+    trigger = Trigger.query.filter(Trigger.id == triggerID, Trigger.userID == current_user.id).one_or_none()
+    if trigger is None:
+        return jsonify(success=False, message='A trigger with that ID does not exist!')
+
     if request.method == 'DELETE':
+        if trigger.iotRuleName:
+            # delete IoT rule
+            iot = boto3.client('iot')
+
+            try:
+                iot.delete_topic_rule(ruleName=trigger.iotRuleName)
+            except ClientError as e:
+                logger.debug('Error deleting IoT rule: {}'.format(e))
+                return jsonify(success=False, message='Unable to delete IoT rule')
+
+            trigger.iotRuleName = None
+            db.session.commit()
+
+        # delete SNS topic 
+        sns = boto3.client('sns')
+    
+        try:
+            sns.delete_topic(TopicArn=trigger.snsTopic)
+        except ClientError as e:
+            logger.debug('Error deleting SNS topic: {}'.format(e))
+            return jsonify(success=False, message='Unable to delete SNS topic')
+
         # delete the trigger
-        pass
+        db.session.delete(trigger)
+        db.session.commit()
+        return jsonify(success=True)
     else:
-        pass
+        triggerSchema = TriggerSchema()
+        return jsonify(success=True, trigger=triggerSchema.dump(trigger))
          
 @app.route('/triggers/<int:triggerID>/target', methods=['POST'])
 @login_required
-@owns_trigger(triggerID)
 def createTriggerTarget(triggerID):
     # create trigger target
-    pass
+    trigger = Trigger.query.filter(Trigger.id == triggerID, Trigger.userID == current_user.id).one_or_none()
+    if trigger is None:
+        return jsonify(success=False, message='A trigger with that ID does not exist!')
+
+    targetSchema = TriggerTargetSchema()
+    target, errors = targetSchema.load(request.get_json())
+    if errors:
+        return jsonify(success=False, error=errors) 
+
+    target.trigger = trigger
+
+    # subscribe to topic
+    sns = boto3.client('sns')
+
+    try:
+        r = sns.subscribe(TopicArn=trigger.snsTopic, Protocol=target.type, Endpoint=target.address)
+    except ClientError as e:
+        logger.debug('Error subscribing to topic: {}'.format(e))
+        return jsonify(success=False, message='Error subscribing to SNS topic')
+
+    target.snsSubscription = r['SubscriptionArn']
+
+    db.session.add(target)
+    db.session.commit()
+
+    return jsonify(success=True, target=targetSchema.dump(target))
 
 @app.route('/targets/<int:targetID>', methods=['DELETE'])
 @login_required
-@owns_trigger_target(targetID)
 def deleteTriggerTarget(targetID):
     # delete trigger target
-    pass
+    target = TriggerTarget.query.filter(TriggerTarget.id == targetID, TriggerTarget.trigger.has(userID=current_user.id)).one_or_none()
+
+    if target is None:
+        return jsonify(success=False, message='A target with that ID does not exist!')
+
+    # unsubscribe from topic
+    sns = boto3.client('sns')
+    
+    try:
+        sns.unsubscribe(SubscriptionArn=target.snsSubscription)
+    except ClientError as e:
+        logger.debug('Error unsubscribing from topic: {}'.format(e))
+        return jsonify(success=False, message='Error unsubscribing from SNS topic')
+
+    db.session.delete(target)
+    db.session.commit()
+
+    return jsonify(success=True)
+     

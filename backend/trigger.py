@@ -1,5 +1,7 @@
 from base import db, ma
 from trigger_target import TriggerTarget
+from marshmallow import fields
+from marshmallow_sqlalchemy import field_for
 
 class Trigger(db.Model):
     __tablename__ = 'triggers'
@@ -27,3 +29,10 @@ class Trigger(db.Model):
 class TriggerSchema(ma.ModelSchema):
     class Meta:
         model = Trigger
+
+    id = field_for(Trigger, 'id', dump_only=True)
+    userID = field_for(Trigger, 'userID', dump_only=True)
+    thingID = field_for(Trigger, 'thingID', dump_only=True)
+    iotRuleName = field_for(Trigger, 'iotRuleName', dump_only=True)
+    snsTopic = field_for(Trigger, 'snsTopic', dump_only=True)
+    targets = fields.Nested(TriggerTarget, many=True, exclude=('triggerID', ))
