@@ -156,7 +156,7 @@ def triggers():
             return jsonify(success=False, message='A thing with this name does not exist')
 
         triggerSchema = TriggerSchema()
-        trigger, errors = TriggerSchema.load(d)
+        trigger, errors = triggerSchema.load(d)
         if errors:
             return jsonify(success=False, error=errors)
 
@@ -180,14 +180,35 @@ def triggers():
 
         trigger.snsTopic = r['TopicArn']
         trigger.iotRuleName = str(trigger.id)
-        db.session.commit()
+
         logger.debug('Created topic with ARN: {}'.format(trigger.snsTopic))
         
+        # subscribe each target to the topic
+        for target in trigger.targets:
+            try:
+                r = sns.subscribe(TopicArn=trigger.snsTopic, Protocol=target.type, Endpoint=target.address)
+            except ClientError as e:
+                logger.debug('Error subscribing to topic: {}'.format(e))
+                # clean up
+                try:
+                    sns.delete_topic(TopicArn=trigger.snsTopic)
+                except ClientError as deleteError:
+                    pass
+                db.session.delete(trigger)
+                db.session.commit()
+                return jsonify(success=False, message='Error subscribing target to SNS topic')
+
+            target.snsSubscription = r['SubscriptionArn']
+
+        db.session.commit()
+
         # create IoT rule
         iot = boto3.client('iot')
 
         # build SQL string for rule
-        sql = '' 
+        comparisonOperator = '=' if trigger.comparator == 'eq' else ('<' if trigger.comparator == 'lt' else '>')
+        sql = 'SELECT \'' + trigger.message + '\' as default FROM \'' + '$aws/things/' + trigger.thing.name + '/shadow/update/accepted\' WHERE state.reported.' + trigger.property + ' ' + comparisonOperator + ' ' + str(trigger.value)
+        logger.debug('Built sql string for IoT rule: {}'.format(sql))
         try:
             r = iot.create_topic_rule(
                 ruleName=str(trigger.id),
@@ -196,7 +217,8 @@ def triggers():
                     actions=[dict(
                         sns=dict(
                             targetArn=trigger.snsTopic,
-                            roleArn=''
+                            roleArn='arn:aws:iam::845043522277:role/iot-rules-role',
+                            messageFormat='JSON'
                         )
                     )]
                 )

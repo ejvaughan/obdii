@@ -1,5 +1,5 @@
 from base import db, ma
-from trigger_target import TriggerTarget
+from trigger_target import TriggerTargetSchema, TriggerTarget
 from marshmallow import fields
 from marshmallow_sqlalchemy import field_for
 
@@ -35,4 +35,4 @@ class TriggerSchema(ma.ModelSchema):
     thingID = field_for(Trigger, 'thingID', dump_only=True)
     iotRuleName = field_for(Trigger, 'iotRuleName', dump_only=True)
     snsTopic = field_for(Trigger, 'snsTopic', dump_only=True)
-    targets = fields.Nested(TriggerTarget, many=True, exclude=('triggerID', ))
+    targets = fields.Nested(TriggerTargetSchema, many=True, exclude=('triggerID', ))

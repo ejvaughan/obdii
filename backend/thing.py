@@ -6,6 +6,7 @@ class Thing(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(length=100), unique=True)
     userID = db.Column(db.Integer, db.ForeignKey('users.id'))
+    triggers = db.relationship('Trigger', backref='thing', cascade='all, delete, delete-orphan')
 
     def __init__(self, name):
         self.name = name
