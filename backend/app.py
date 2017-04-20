@@ -207,13 +207,15 @@ def triggers():
 
         # build SQL string for rule
         comparisonOperator = '=' if trigger.comparator == 'eq' else ('<' if trigger.comparator == 'lt' else '>')
-        sql = 'SELECT \'' + trigger.message + '\' as default FROM \'' + '$aws/things/' + trigger.thing.name + '/shadow/update/accepted\' WHERE state.reported.' + trigger.property + ' ' + comparisonOperator + ' ' + str(trigger.value)
+        
+        sql = 'SELECT \'' + trigger.message + '\' as default FROM \'' + '$aws/things/' + trigger.thing.name + '/shadow/update/accepted\' WHERE state.reported.' + trigger.property + '.curr ' + comparisonOperator + ' ' + str(trigger.value) + ' AND NOT (state.reported.' + trigger.property + '.prev ' + comparisonOperator + ' ' + str(trigger.value) + ')'
         logger.debug('Built sql string for IoT rule: {}'.format(sql))
         try:
             r = iot.create_topic_rule(
                 ruleName=str(trigger.id),
                 topicRulePayload=dict(
                     sql=sql,
+                    awsIotSqlVersion='2016-03-23',
                     actions=[dict(
                         sns=dict(
                             targetArn=trigger.snsTopic,
