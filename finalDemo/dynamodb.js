@@ -21,26 +21,3 @@ AWS.config.update({
  * prepare dynamodb and a funciton for querying the database
  */
 var dynamodb = new AWS.DynamoDB.DocumentClient();
-function query(table, param, callback){
-    console.log("Preparing parameters for querying table " + table + "......");
-    var params={
-        TableName: table,
-        KeyConditionExpression: "#tp = :tttt",
-        ExpressionAttributeNames:{
-            "#tp": 'date'
-        },
-        ExpressionAttributeValues:{
-            ":tttt":param
-        }
-    };
-    console.log("Start querying ......");
-    dynamodb.query(params, function(err, data){
-        if(err){
-            alert("Query DynamoDB Error: " + err);
-        }else{
-            console.log("data>>>: "+ JSON.stringify(data));
-            callback(data);
-            callback("callback working");
-        }
-    });
-}
