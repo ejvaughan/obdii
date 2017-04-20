@@ -31,7 +31,7 @@ class TriggerSchema(ma.ModelSchema):
         model = Trigger
 
     id = field_for(Trigger, 'id', dump_only=True)
-    userID = field_for(Trigger, 'userID', dump_only=True)
+    userID = field_for(Trigger, 'userID', load_only=True)
     thingID = field_for(Trigger, 'thingID', dump_only=True)
     iotRuleName = field_for(Trigger, 'iotRuleName', dump_only=True)
     snsTopic = field_for(Trigger, 'snsTopic', dump_only=True)

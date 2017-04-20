@@ -1,4 +1,7 @@
-from base import db
+from base import db, ma
+from trigger import TriggerSchema
+from marshmallow import fields
+from marshmallow_sqlalchemy import field_for
 
 class Thing(db.Model):
     __tablename__ = 'things'
@@ -14,3 +17,10 @@ class Thing(db.Model):
     @staticmethod
     def fullyQualifiedName(thingName):
         return 'arn:aws:iot:us-east-1:845043522277:thing/' + thingName
+
+class ThingSchema(ma.ModelSchema):
+    class Meta:
+        model = Thing 
+        
+    user = field_for(Thing, 'user', load_only=True)
+    triggers = fields.Nested(TriggerSchema, many=True, exclude=('thingID', ))

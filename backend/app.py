@@ -1,7 +1,7 @@
 from base import *
 from flask import jsonify, request, abort
 from user import User
-from thing import Thing
+from thing import Thing, ThingSchema
 from trigger import Trigger, TriggerSchema
 from trigger_target import TriggerTarget, TriggerTargetSchema
 from flask_login import login_user, login_required, current_user
@@ -138,6 +138,12 @@ def pair():
 
     return jsonify(success=True)
 
+@app.route('/things', methods=['GET'])
+@login_required
+def things():
+    thingSchema = ThingSchema(many=True)
+    return jsonify(success=True, things=thingSchema.dump(Thing.query.filter_by(userID=current_user.id).all()).data)
+
 @app.route('/triggers', methods=['GET', 'POST'])
 @login_required
 def triggers():
@@ -236,10 +242,10 @@ def triggers():
             db.session.commit()
             return jsonify(success=False, message='Unable to create IoT rule')
 
-        return jsonify(success=True, trigger=triggerSchema.dump(trigger)) 
+        return jsonify(success=True, trigger=triggerSchema.dump(trigger).data) 
     else:
         triggerSchema = TriggerSchema(many=True)
-        return jsonify(success=True, triggers=triggerSchema.dump(Trigger.query.filter_by(userID=current_user.id).all()))
+        return jsonify(success=True, triggers=triggerSchema.dump(Trigger.query.filter_by(userID=current_user.id).all()).data)
 
 @app.route('/triggers/<int:triggerID>', methods=['GET', 'DELETE'])
 @login_required
@@ -277,7 +283,7 @@ def getOrDeleteTrigger(triggerID):
         return jsonify(success=True)
     else:
         triggerSchema = TriggerSchema()
-        return jsonify(success=True, trigger=triggerSchema.dump(trigger))
+        return jsonify(success=True, trigger=triggerSchema.dump(trigger).data)
          
 @app.route('/triggers/<int:triggerID>/target', methods=['POST'])
 @login_required
@@ -308,7 +314,7 @@ def createTriggerTarget(triggerID):
     db.session.add(target)
     db.session.commit()
 
-    return jsonify(success=True, target=targetSchema.dump(target))
+    return jsonify(success=True, target=targetSchema.dump(target).data)
 
 @app.route('/targets/<int:targetID>', methods=['DELETE'])
 @login_required
