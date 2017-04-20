@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>CSE521S </title>
+        <link rel="stylesheet" href="styles.css">
+        
+    </head>
+
+    <body>
+       
+        <!-- navigation bar -->
+        <nav class = "navbar navbar-inverse">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="#">CSE521</a>
+                </div>
+                <ul class="nav navbar-nav">
+                    <li class="active"><a href="#">Trends</a></li>
+                    <li><a href="#">Trigers</a></li>
+                </ul>
+
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="#"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
+                    <li><a href="#"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+                </ul>
+            </div>
+        </nav>
+            
+        <!-- trends div -->
+        <div id="trends">
+            <!-- date navigation -->
+            <div id="date" align="center">
+                <div class="btn-group">
+                      <button type="button" class="btn btn-default btn-lg" id="dispDate">xxx xx, xxxx</button>
+                      <button type="button" class="btn btn-info btn-lg" id="prevday"><span class="glyphicon glyphicon-arrow-left"></span></button>
+                      <button type="button" class="btn btn-info btn-lg" id="today">Today</button>
+                      <button type="button" class="btn btn-info btn-lg" id="nextday"><span class="glyphicon glyphicon-arrow-right"></span></button>
+                </div>
+            </div>
+            
+            <div id="canvas">
+                <!-- template of row of canvas -->    
+                <!-- div class = "row" id='row1'>
+                    <div class = "col-sm-4" align="center">  <canvas id="row1-can1" width="300" height="300"></canvas> </div>
+                    <div class = "col-sm-4" align="center">  <canvas id="row1-can2" width="300" height="300"></canvas>   </div>
+                    <div class = "col-sm-4" align="center">  <canvas id="row1-can3" width="300" height="300"></canvas>   </div>
+                </div -->
+            </div>
+            
+            <!-- no data found dialog -->
+            <div class="modal fade" id="myModal" role="dialog">
+                <div class="modal-dialog modal-sm">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            <h4 class="modal-title">Modal Header</h4>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>    
+                </div>
+            </div>
+
+
+        </div>
+
+
+
+               
+
+
+        <!-- bootstrap, jquery -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+        <!-- chartjs -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.bundle.js"></script>
+
+        <!-- aws javascript sdk -->
+        <script src="https://sdk.amazonaws.com/js/aws-sdk-2.7.16.min.js"></script>
+
+        <!-- customer scripts -->
+        <script src="dynamodb.js"></script>
+        <script src="utility.js"></script>
+        <script src="index.js"></script>
+    </body>
+
+</html>
+
