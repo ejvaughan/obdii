@@ -210,7 +210,19 @@ int main(int argc, char** argv) {
 		return rc;
 	}
 
-	// loop and publish a change in engine RPMs
+	// These are the commands whose values will be uploaded to the shadow state
+	struct CommandPreviousValueTuple {
+		OBDIICommand *command;
+		float value;
+	} commandPrevValuesMap[] = {
+		{ OBDIICommands.engineRPMs, 0 },
+		{ OBDIICommands.vehicleSpeed, 0 },
+		{ OBDIICommands.fuelTankLevelInput, 0 },
+		{ OBDIICommands.engineCoolantTemperature, 0 },
+		{ OBDIICommands.runtimeSinceEngineStart, 0 },
+		{ OBDIICommands.acceleratorPedalPositionD, 0 }
+	};
+	
 	while (NETWORK_ATTEMPTING_RECONNECT == rc || RECONNECT_SUCCESSFUL == rc || NONE_ERROR == rc) {
 
 		if ((rc = aws_iot_shadow_yield(&mqttClient, 200)) == NETWORK_ATTEMPTING_RECONNECT) {
@@ -232,7 +244,14 @@ int main(int argc, char** argv) {
 			OBDIICommand *command = supportedCommands.commands[i];
 
 			// Skip over commands we don't care about
-			if (!(command == OBDIICommands.engineRPMs || command == OBDIICommands.vehicleSpeed || command == OBDIICommands.fuelTankLevelInput || command == OBDIICommands.engineCoolantTemperature || command == OBDIICommands.runtimeSinceEngineStart || command == OBDIICommands.acceleratorPedalPositionD)) {
+			int j;
+			for (j = 0; j < sizeof(commandPrevValuesMap)/sizeof(commandPrevValuesMap[0]); ++j) {
+				if (commandPrevValuesMap[j].command == command) {
+					break;
+				}
+			}
+
+			if (j == sizeof(commandPrevValuesMap)/sizeof(commandPrevValuesMap[0])) {
 				continue;
 			}
 
@@ -244,9 +263,17 @@ int main(int argc, char** argv) {
 				unsigned char mode = OBDIICommandGetMode(command);
 				unsigned char PID = OBDIICommandGetPID(command);
 
-				char propertyName[6];
-				propertyName[5] = '\0';
-				sprintf(propertyName, "%02x:%02x", mode, PID);
+				char prevPropertyName[10];
+				prevPropertyName[9] = '\0';
+				sprintf(prevPropertyName, "prev%02x:%02x", mode, PID);
+				
+				jsonStruct_t prevKeyValuePair;
+				prevKeyValuePair.cb = NULL;
+				prevKeyValuePair.pKey = prevPropertyName;
+
+				char propertyName[10];
+				propertyName[9] = '\0';
+				sprintf(propertyName, "curr%02x:%02x", mode, PID);
 
 				jsonStruct_t keyValuePair;
 				keyValuePair.cb = NULL;
@@ -254,6 +281,9 @@ int main(int argc, char** argv) {
 
 				switch (command->responseType) {
 					case OBDIIResponseTypeNumeric:
+						prevKeyValuePair.pData = &commandPrevValuesMap[j].value;
+						prevKeyValuePair.type = SHADOW_JSON_FLOAT;
+
 						keyValuePair.pData = &response.numericValue;
 						keyValuePair.type = SHADOW_JSON_FLOAT;
 						break;
@@ -269,9 +299,18 @@ int main(int argc, char** argv) {
 						break;
 				}
 
+				if ((rc = aws_iot_shadow_add_key_value_pair(JsonDocumentBuffer, sizeOfJsonDocumentBuffer, &prevKeyValuePair)) != NONE_ERROR) {
+					OBDIIResponseFree(&response);
+					break;
+				}		
+
 				if ((rc = aws_iot_shadow_add_key_value_pair(JsonDocumentBuffer, sizeOfJsonDocumentBuffer, &keyValuePair)) != NONE_ERROR) {
 					OBDIIResponseFree(&response);
 					break;
+				}
+
+				if (command->responseType == OBDIIResponseTypeNumeric) {
+					commandPrevValuesMap[j].value = response.numericValue;
 				}
 			}
 
