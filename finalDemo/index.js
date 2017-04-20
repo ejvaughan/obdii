@@ -45,7 +45,7 @@ document.getElementById("prevday").addEventListener("click", function(e){
 
 /**
  * query the database and draw the chart
- */ 
+ */
 function query(table, param, callback){
     console.log("Preparing parameters for querying table " + table + "......");
     var params={
@@ -64,13 +64,12 @@ function query(table, param, callback){
             alert("Query DynamoDB Error: " + err);
         }else{
             callback(data);
-            callback("callback working");
         }
     });
 }
 /**
  * callback function used for the query of database
- */ 
+ */
 function drawLineChart(data){
     // if there is no data
     if(data.Count ===  0) {
@@ -78,7 +77,7 @@ function drawLineChart(data){
         $("#no-data-dialog").modal('show');
         return;
     }
-    
+
     //process data
     var processed = processData(data);
     var labelArr = processed[0];
@@ -86,21 +85,21 @@ function drawLineChart(data){
 
     //draw graph based on the data
     draw(labelArr, dataArr);
-    
+
 }
 
 
 /**
- * process the data queried from the data base 
+ * process the data queried from the data base
  * the idea is partition the data to different time buckets, for each time buckets draw a line chart
- */ 
+ */
 function processData(data){
 
     // process fetched data
     var items = data.Items; //get all the items
-    var labelArr = [];      
+    var labelArr = [];
     var dataArr = [];
-    var prev = getTime(currentDate + SPACE + items[0].time); 
+    var prev = getTime(currentDate + SPACE + items[0].time);
     var labelPath = [];
     var dataPath = [];
     for(var i = 0; i < data.Count; ++i){
@@ -123,9 +122,9 @@ function processData(data){
         labelArr.push($.extend(true,[], labelPath));
         dataArr.push($.extend(true, [], dataPath));
     }
-    
+
     var result = [];
-    result.push(labelArr); 
+    result.push(labelArr);
     result.push(dataArr);
     return result;
 }
@@ -133,19 +132,19 @@ function processData(data){
 
 /**
  * Draw several line charts, three in a row
- */ 
+ */
 function draw(labelArr, dataArr){
-   
+
     var canvas = document.getElementById("canvas");
     $("#canvas").empty(); // empty the canvas
     for(var j = 0; j < labelArr.length; ++j){
         var chartLabels = labelArr[j];
         var chartData = dataArr[j];
         if(chartLabels.length < 5) continue; //if not enough data, less than 10 seconds
-        
+
         //set up the canvas
         if(numCols >= 3){ // check if a row is filled
-            numRows+= 1; 
+            numRows+= 1;
             numCols = 0;
         }
         if(numCols === 0){
@@ -165,15 +164,15 @@ function draw(labelArr, dataArr){
         newCol.appendChild(newCan);
         row.appendChild(newCol);
         numCols++;
-        
+
         // draw the chart
         var canTemp = JSON.parse(JSON.stringify(LINE_TEMPLATE));
         canTemp.labels = chartLabels;
         canTemp.datasets[0].data = chartData;
-        canTemp.datasets[0].label = chartLabels[0] + " - " + chartLabels[chartLabels.length - 1]; 
+        canTemp.datasets[0].label = chartLabels[0] + " - " + chartLabels[chartLabels.length - 1];
         var canContext = newCan.getContext("2d");
         generateLineChart(canContext, canTemp);
-    
+
         console.log("row >>>>> " + numRows + " col>>>> " + numCols);
     }
 }
