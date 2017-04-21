@@ -4,8 +4,7 @@
 var LINE_TEMPLATE = {
     datasets: [
         {
-            label: "holder",
-            fill: true,
+            fill: false,
             lineTension: 0.1,
             backgroundColor: "rgba(75,192,192,0.4)",
             borderColor: "rgba(75,192,192,1)",
@@ -32,25 +31,100 @@ var LINE_TEMPLATE = {
  */ 
 var LINE_OPTIONS = {
     responsive:false,
+    legend:{display:false},
+    title:{
+        display:true,
+        text: "test"
+    },
     scales:{
         xAxes:[{
             ticks:{
                 autoSkip:true,
                 maxTicksLimit:5
+            },
+            scaleLabel:{
+                display:true,
+                labelString: "time"
+            }
+        }],
+        yAxes:[{
+            scaleLabel:{
+                display: true,
+                labelString: 'speed'
             }
         }]
+    }
+
+
+};
+
+
+/**
+ *  Pie Template
+ */ 
+var PIE_TEMPLATE = {
+    labels: [
+        "< 30",
+        "30-60",
+        "60-90",
+        "> 90"
+    ],
+    datasets: [
+        {
+            data: [],
+            backgroundColor: [
+                "#FFCE56",
+                "#63ff90",
+                "#36A2EB",
+                "#FF6384"
+            ],
+            hoverBackgroundColor: [
+                "#FFCE56",
+                "#63ff90",
+                "#36A2EB",
+                "#FF6384"
+            ]
+        }]
+};
+
+var PIE_OPTIONS = {
+    responsive:false,
+    title:{
+        display:true,
+        text: "Speed Summary"
+    },
+    legend:{
+        position:'top',
+        fullWidth:false,
+        labels:{
+            boxWidth:20
+        }
     }
 };
 
 
 /**
+ * generate a pie chart
+ */ 
+function generatePieChart(canvas, data, opts){
+    var pieChart = new Chart(canvas,{
+        type:'pie',
+        data:data,
+        options:opts
+    });
+    return pieChart;
+}
+
+
+
+/**
  * function used to generate a line chart with the specified labels and data
  */ 
-function generateLineChart(canvas, data){
+function generateLineChart(canvas, data, options){
     var lineChart = new Chart(canvas, {
         type: 'line',
         data: data,
-        options:LINE_OPTIONS
+        options: options
     });
     return lineChart;
 } 

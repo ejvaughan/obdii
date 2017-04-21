@@ -1,3 +1,18 @@
-#date{
+#date, .col-sm-4{
     padding-bottom:50px;
+}
+.navbar {
+    margin-bottom: 0 !important;
+}
+/* Header Image Background - Change the URL below to your image path (example: ../images/background.jpg) */
+#imageContainer{
+    overflow:hidden;
+}
+
+
+.dia-forms{
+    display: none;
+    text-align:left;
+    padding: 5px;
+    width: 200px;
 }
