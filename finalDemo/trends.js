@@ -16,7 +16,7 @@ document.getElementById("today").addEventListener("click", function(e){
     $("#canvas").empty(); // empty the canvas
     numRows = 0;
     numCols = 0;
-    query(table, currentDate, drawLineChart);
+    query(table, currentDate, drawCharts);
 },false);
 // next date handler
 document.getElementById("nextday").addEventListener("click", function(e){
@@ -27,7 +27,7 @@ document.getElementById("nextday").addEventListener("click", function(e){
     $("#canvas").empty(); // empty the canvas
     numRows = 0;
     numCols = 0;
-    query(table, currentDate, drawLineChart);
+    query(table, currentDate, drawCharts);
 },false);
 
 //prev date handler
@@ -39,7 +39,7 @@ document.getElementById("prevday").addEventListener("click", function(e){
     $("#canvas").empty(); // empty the canvas
     numRows = 0;
     numCols = 0;
-    query(table, currentDate, drawLineChart);
+    query(table, currentDate, drawCharts);
 },false);
 
 
@@ -70,30 +70,83 @@ function query(table, param, callback){
 /**
  * callback function used for the query of database
  */
-function drawLineChart(data){
+function drawCharts(data){
     // if there is no data
     if(data.Count ===  0) {
         console.log("No data on this day");
-        $("#no-data-dialog").modal('show');
+        alert("No data on this day");
         return;
     }
 
-    //process data
-    var processed = processData(data);
+    //process data for the pie
+    var pieProcessed = getPieData(data);
+    console.log(pieProcessed);
+    drawPies(pieProcessed);
+    //process data for the line
+    var processed = getLineData(data);
     var labelArr = processed[0];
     var dataArr = processed[1];
-
     //draw graph based on the data
-    draw(labelArr, dataArr);
+    drawLines(labelArr, dataArr);
 
 }
 
 
 /**
+ * process the queried data for pie chart 
+ * pie chart is the summary of one days drive speed
+ */ 
+function getPieData(data){
+    var items = data.Items;
+    var categories = {"leThirty":0, "thirtyToSixty":0, "sixtyToNinety":0, "gtNinety":0};
+    console.log("...." + data.Count);
+    for(var i = 0; i < data.Count; ++i){
+        var temperature = items[i].temperature;
+        if(temperature < 30) categories.leThirty++;
+        else if(temperature >= 30 && temperature<60) categories.thirtyToSixty++;
+        else if(temperature >= 60 && temperature<90) categories.sixtyToNinety++;
+        else categories.gtNinety++;
+    }
+    var result = [categories.leThirty, categories.thirtyToSixty, categories.sixtyToNinety, categories.gtNinety];
+    return result; 
+
+}
+
+/**
+ * draw pie funciton
+ */ 
+function drawPies(data){
+    var canvas = document.getElementById("canvas"); //get canvas
+    var newRow = document.createElement("div");
+    newRow.setAttribute("class", "row");
+    newRow.setAttribute("id", "row" + numRows);
+    canvas.appendChild(newRow);
+
+    var row = document.getElementById("row" + numRows);
+    var newCol = document.createElement("div");
+    newCol.setAttribute("class", "col-sm-4");
+    newCol.setAttribute("align", "center");
+    var newCan = document.createElement("canvas");
+    newCan.setAttribute("id", "row" + numRows + "-can" + numCols);
+    newCan.setAttribute("width", 300);
+    newCan.setAttribute("height",300);
+    newCol.appendChild(newCan);
+    row.appendChild(newCol);
+    numCols++;
+    
+    var pieData = JSON.parse(JSON.stringify(PIE_TEMPLATE));
+    pieData.datasets[0].data = data;
+    var pieContext = newCan.getContext("2d");
+    var opts = JSON.parse(JSON.stringify(PIE_OPTIONS));
+    generatePieChart(pieContext, pieData, opts);
+
+}
+
+/**
  * process the data queried from the data base
  * the idea is partition the data to different time buckets, for each time buckets draw a line chart
  */
-function processData(data){
+function getLineData(data){
 
     // process fetched data
     var items = data.Items; //get all the items
@@ -133,10 +186,8 @@ function processData(data){
 /**
  * Draw several line charts, three in a row
  */
-function draw(labelArr, dataArr){
-
+function drawLines(labelArr, dataArr){
     var canvas = document.getElementById("canvas");
-    $("#canvas").empty(); // empty the canvas
     for(var j = 0; j < labelArr.length; ++j){
         var chartLabels = labelArr[j];
         var chartData = dataArr[j];
@@ -147,7 +198,7 @@ function draw(labelArr, dataArr){
             numRows+= 1;
             numCols = 0;
         }
-        if(numCols === 0){
+        if(numCols === 0 && numRows >= 1){
             var newRow = document.createElement("div");
             newRow.setAttribute("class", "row");
             newRow.setAttribute("id", "row" + numRows);
@@ -169,11 +220,10 @@ function draw(labelArr, dataArr){
         var canTemp = JSON.parse(JSON.stringify(LINE_TEMPLATE));
         canTemp.labels = chartLabels;
         canTemp.datasets[0].data = chartData;
-        canTemp.datasets[0].label = chartLabels[0] + " - " + chartLabels[chartLabels.length - 1];
+        var opts = JSON.parse(JSON.stringify(LINE_OPTIONS));
+        opts.title.text =  chartLabels[0] + " - " + chartLabels[chartLabels.length - 1];
         var canContext = newCan.getContext("2d");
-        generateLineChart(canContext, canTemp);
-
-        console.log("row >>>>> " + numRows + " col>>>> " + numCols);
+        generateLineChart(canContext, canTemp, opts);
     }
 }
 
