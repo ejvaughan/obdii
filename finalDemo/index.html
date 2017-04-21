@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html >
     <head>
         <title>CSE521S </title>
         <link rel="stylesheet" href="styles.css">
@@ -9,23 +9,29 @@
     <body>
        
         <!-- navigation bar -->
-        <nav class = "navbar navbar-inverse">
+        <nav class = "navbar navbar-inverse" >
             <div class="container-fluid">
                 <div class="navbar-header">
-                    <a class="navbar-brand" href="#">CSE521</a>
+                    <a class="navbar-brand" id="brand">CSE521</a>
                 </div>
                 <ul class="nav navbar-nav">
-                    <li class="active"><a href="#">Trends</a></li>
-                    <li><a href="#">Trigers</a></li>
+                    <li><a id="trendsButton">Trends</a></li>
+                    <li><a id="triggersButton">Triggers</a></li>
                 </ul>
 
                 <ul class="nav navbar-nav navbar-right">
-                    <li><a href="#"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
-                    <li><a href="#"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+                    <li><a id="signUpButton"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
+                    <li><a id="loginButton"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+                    <li><a style="display:none" id="welcome"><span class="glyphicon"></span> Welcome</a></li>
                 </ul>
             </div>
         </nav>
             
+        <!-- put up an image for the home -->
+        <div id="imageContainer">
+            <img id="image"src="http://p.motionelements.com/after-effects/science-technology/me9035380-internet-things-smart-home-infographics-a1110.jpg" alt="image"/>
+        </div>
+
         <!-- trends div -->
         <div id="trends">
             <!-- date navigation -->
@@ -48,9 +54,30 @@
             </div>
             
         </div>
+        
 
+        <!-- trigger div -->
+        <div id="triggers">
+            <h1> This is trigger div </h1>
+        
+        </div>
 
+        <!--forms for registering-->
+        <div id="registerForm" title="Register" class="dia-forms">
+            Email: <br> <input type="text" name="email" id="regEmail"/> <br>
+            Password: <br> <input type="password" name="regPassword" id="regPassword"/> <br>
+            Confirm password: <br> <input type="password" name="password-confirm" id="passwordConfirm" /> <br>
+            <br> 
+            <input type="button" id="registerSubmit" value="submit" />
+        </div>
 
+        <!--forms for login-->
+        <div id="loginForm" title="Register" class="dia-forms">
+            Email: <br> <input type="text" name="email" id="loginEmail"/> <br>
+            Password: <br> <input type="password" name="loginPassword" id="loginPassword"/> <br>
+            <br> 
+            <input type="button" id="loginSubmit" value="submit" />
+        </div>
                
 
 
@@ -58,6 +85,9 @@
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <!-- jquery ui for dialog -->
+        <link href = "https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css" rel="stylesheet">  
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
 
         <!-- chartjs -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.bundle.js"></script>
@@ -69,6 +99,7 @@
         <script src="dynamodb.js"></script>
         <script src="utility.js"></script>
         <script src="trends.js"></script>
+        <script src="index.js"></script>
     </body>
 
 </html>
