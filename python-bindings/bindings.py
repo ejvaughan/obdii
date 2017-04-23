@@ -201,3 +201,7 @@ OBDIIPerformQuery.argtypes = [ c_int, POINTER(OBDIICommand) ]
 OBDIIGetSupportedCommands = obdii.OBDIIGetSupportedCommands
 OBDIIGetSupportedCommands.restype = OBDIICommandSet
 OBDIIGetSupportedCommands.argtypes = [ c_int ]
+
+# constants from linux/can.h
+
+CAN_EFF_FLAG = 0x80000000

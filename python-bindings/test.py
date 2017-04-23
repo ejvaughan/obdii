@@ -6,10 +6,10 @@ if len(sys.argv) != 4:
     quit(1)
 
 ifname = sys.argv[1]
-receiveID = int(sys.argv[2], 16)
-transferID = int(sys.argv[3], 16)
+receiveID = int(sys.argv[2], 16) | CAN_EFF_FLAG
+transferID = int(sys.argv[3], 16) | CAN_EFF_FLAG
 
-s = OBDIIOpenSocket(ifname, receiveID, transferID)
+s = OBDIIOpenSocket(ifname, transferID, receiveID)
 
 if s < 0:
     print('Error opening socket')
