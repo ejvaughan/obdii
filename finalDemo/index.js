@@ -1,5 +1,7 @@
 var url = "http://car.ejvaughan.com"; // endpoint of the backend
 var loggedIn = false;
+var currentUser = null;
+var currentPassword = null;
 // image and brand handler
 document.getElementById("brand").addEventListener("click", function(){
     console.log("brand button get clicked -->");
@@ -24,7 +26,7 @@ document.getElementById("trendsButton").addEventListener("click", function(){
 $("#triggers").hide(); //default is hide
 document.getElementById("triggersButton").addEventListener("click", function(){
     console.log("triggers button is clicked -->");
-    if(!loggedIn){alert("Please log in first"); return;}
+    //if(!loggedIn){alert("Please log in first"); return;}
     $("#triggers").show();
     $("#trends").hide();
     $("#imageContainer").hide();
@@ -57,6 +59,8 @@ document.getElementById("registerSubmit").addEventListener("click", function(){
     xmlHttp.addEventListener("load", function(event){
         var data = JSON.parse(event.target.responseText);
         if(!data.success) {alert(data.message); return;} 
+        $("#signUpButton").hide();
+        $("#loginButton").hide();
         document.getElementById("welcome").innerHTML = "Welcome " + email;
         $("#welcome").show(); // show welcome message
         // hide the register form
@@ -94,25 +98,14 @@ function login(email, password){
         if(!data.success){alert(data.message); return;} 
         console.log("successfully logged in");
         if($("#loginForm").dialog() && $("#loginForm").dialog("isOpen")) $("#loginForm").dialog("close");
+        $("#signUpButton").hide();
+        $("#loginButton").hide();
+        document.getElementById("welcome").innerHTML = "Welcome " + email;
+        $("#welcome").show(); // show welcome message
         loggedIn = true;
     },false);
     xmlHttp.send(dataString);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
