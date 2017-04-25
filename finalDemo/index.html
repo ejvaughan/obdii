@@ -26,6 +26,13 @@
                 </ul>
             </div>
         </nav>
+
+        <!-- alert div -->
+        <div class="alert alert-danger" id = "alert">
+            <a id="alertClose" class="close"  aria-label="close">&times;</a>
+            <strong>Message: </strong> 
+            <p>This alert box could indicate a neutral informative change or action</p>
+        </div>
             
         <!-- put up an image for the home -->
         <div id="imageContainer">
@@ -58,8 +65,29 @@
 
         <!-- trigger div -->
         <div id="triggers">
-            <h1> This is trigger div </h1>
-        
+            <div  class="table-responsive">
+                <table class="table" id="triggersTable">
+                    <thead>
+                        <th> # </th>
+                        <th> The Thing  </th>
+                        <th> Property </th>
+                        <th> Comparator </th>
+                        <th> Value </th>
+                        <th> Target Type </th>
+                        <th> Target Address </th>
+                        <th> Message </th>
+                        <th> Actions </th>
+                    </thead> 
+                    <tbody >
+
+                    </tbody>    
+                </table>
+            </div>
+            
+            <!-- div for add trigger button -->
+            <div >
+                <button type="button" class ="btn btn-success col-md-12"> <strong> Click to Add More Triggers  </strong></button> 
+            </div>    
         </div>
 
         <!--forms for registering-->
@@ -78,7 +106,9 @@
             <br> 
             <input type="button" id="loginSubmit" value="submit" />
         </div>
-               
+         
+    
+
 
 
         <!-- bootstrap, jquery -->

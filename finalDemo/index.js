@@ -1,5 +1,13 @@
+//test area
+
 var url = "http://car.ejvaughan.com"; // endpoint of the backend
 var loggedIn = false;
+var currentUser = null;
+var currentPassword = null;
+
+// add event listener for alert close
+document.getElementById("alertClose").addEventListener("click", function(){$("#alert").hide();}, false);
+
 // image and brand handler
 document.getElementById("brand").addEventListener("click", function(){
     console.log("brand button get clicked -->");
@@ -12,7 +20,7 @@ document.getElementById("brand").addEventListener("click", function(){
 $("#trends").hide(); //default is hide
 document.getElementById("trendsButton").addEventListener("click", function(){
     console.log("trends button clicked -->");
-    if(!loggedIn){alert("Please login first."); return;}
+    if(!loggedIn){pushAlert("Please login first."); return;}
     $("#trends").show();
     $("#imageContainer").hide();
     $("#triggers").hide();
@@ -20,11 +28,14 @@ document.getElementById("trendsButton").addEventListener("click", function(){
 },false);
 
 
-// tlrigger div manipulation
+// trigger div manipulation
 $("#triggers").hide(); //default is hide
 document.getElementById("triggersButton").addEventListener("click", function(){
     console.log("triggers button is clicked -->");
-    if(!loggedIn){alert("Please log in first"); return;}
+    //if(!loggedIn){pushAlert("Please log in first"); return;}
+    
+    getListOfTriggers();
+
     $("#triggers").show();
     $("#trends").hide();
     $("#imageContainer").hide();
@@ -45,7 +56,7 @@ document.getElementById("registerSubmit").addEventListener("click", function(){
     var password = document.getElementById("regPassword").value;
     var passwordConfirm = document.getElementById("passwordConfirm").value;
     if(email === "" || password === "" || passwordConfirm === "" || (password != passwordConfirm)){ // check if input is valid or not
-        alert("Email or password is not filled, or confirm password is not consistent");
+        pushAlert("Email or password is not filled, or confirm password is not consistent");
         return;
     }
     
@@ -56,7 +67,9 @@ document.getElementById("registerSubmit").addEventListener("click", function(){
     xmlHttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
     xmlHttp.addEventListener("load", function(event){
         var data = JSON.parse(event.target.responseText);
-        if(!data.success) {alert(data.message); return;} 
+        if(!data.success) {pushAlert(data.message); return;} 
+        $("#signUpButton").hide();
+        $("#loginButton").hide();
         document.getElementById("welcome").innerHTML = "Welcome " + email;
         $("#welcome").show(); // show welcome message
         // hide the register form
@@ -91,28 +104,17 @@ function login(email, password){
     xmlHttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
     xmlHttp.addEventListener("load", function(event){
         var data = JSON.parse(event.target.responseText);
-        if(!data.success){alert(data.message); return;} 
+        if(!data.success){pushAlert(data.message); return;} 
         console.log("successfully logged in");
         if($("#loginForm").dialog() && $("#loginForm").dialog("isOpen")) $("#loginForm").dialog("close");
+        $("#signUpButton").hide();
+        $("#loginButton").hide();
+        document.getElementById("welcome").innerHTML = "Welcome " + email;
+        $("#welcome").show(); // show welcome message
         loggedIn = true;
     },false);
     xmlHttp.send(dataString);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
