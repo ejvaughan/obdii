@@ -175,7 +175,13 @@ function getTime(time){
     return d.getTime();
 }
 
-
+/**
+ * funtion to dispplay an alert message 
+ */ 
+function pushAlert(message){
+    $("#alert").show();
+    $("#alert").children()[2].textContent = message;
+}
 
 
 

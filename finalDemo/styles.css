@@ -1,7 +1,7 @@
 #date, .col-sm-4{
     padding-bottom:50px;
 }
-.navbar {
+.navbar, .alert{
     margin-bottom: 0 !important;
 }
 /* Header Image Background - Change the URL below to your image path (example: ../images/background.jpg) */
@@ -16,3 +16,10 @@
     padding: 5px;
     width: 200px;
 }
+
+.alert{
+    display:none;
+}
+ #alertClose{
+    text-align:right;
+ }
