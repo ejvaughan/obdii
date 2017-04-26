@@ -51,9 +51,9 @@ class OBDIIResponse(Structure):
     ]
 
 # OBDIIResponseType enum
-(OBDIIResponseTypeBitfield, OBDIIResponseTypeNumeric, OBDIIReponseTypeString, OBDIIResponseTypeOther) = (0, 1, 2, 3)
+(OBDIIResponseTypeBitfield, OBDIIResponseTypeNumeric, OBDIIResponseTypeString, OBDIIResponseTypeOther) = (0, 1, 2, 3)
 
-OBDIIResponseDecoder = CFUNCTYPE(None, POINTER(OBDIIResponse), POINTER(c_uint8), POINTER(c_int))
+OBDIIResponseDecoder = CFUNCTYPE(None, POINTER(OBDIIResponse), POINTER(c_uint8), c_int)
 
 OBDIICommand._fields_ = [
         ('name', c_char_p),
@@ -160,7 +160,6 @@ class OBDIICommandsT(Structure):
         ('commandedThrottleActuator', POINTER(OBDIICommand)),
         ('timeRunWithMalfunctionIndicatorLampOn', POINTER(OBDIICommand)),
         ('timeSinceTroubleCodesCleared', POINTER(OBDIICommand)),
-        ('OBDIICommand *mode1SupportedPIDs_61_to_80', POINTER(OBDIICommand)),
         ('DTCs', POINTER(OBDIICommand)),
         ('mode9SupportedPIDs', POINTER(OBDIICommand)),
         ('vinMessageCount', POINTER(OBDIICommand)),
