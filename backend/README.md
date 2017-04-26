@@ -170,21 +170,21 @@ Example JSON response:
 
 `curl http://car.ejvaughan.com/triggers -b cookies --data-binary @trigger.json -H "Content-Type: application/json"`
 
-Example trigger.json:
+Example `trigger.json` that creates a trigger that activates when the car goes faster than 80mph:
 
 ```json
 {
 	"thing": "PiCarHacking",
-	"property": "temperature",
-	"comparator": "eq",
-	"value": 40,
+	"property": "010d",
+	"comparator": "gt",
+	"value": 80,
 	"targets": [
 		{
 			"type": "sms",
 			"address": "+16369807492"
 		}
 	],
-	"message": "Hello, world!"
+	"message": "Slow down, you are going too fast!"
 }
 ```
 
