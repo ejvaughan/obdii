@@ -188,13 +188,13 @@ Example trigger.json:
 }
 ```
 
-Supported values for `property` include:
+Supported values for `comparator` include:
 
 * `eq`: Equality
 * `gt`: Greater than
 * `lt`: Less than
 
-Supported property names include:
+Supported values for `property` include:
 
 * `010c`: Engine RPMs
 * `010d`: Vehicle speed
