@@ -1,6 +1,13 @@
 
 var numTargets = 0; // variable used to keep track of number of targets created in creating a trigger
 
+function closeCreateTriggerUI() {
+    $("#triggerRow").empty();
+    $("#targets").empty();
+    $("#triggerForm").hide(); 
+    numTargets = 0;
+}
+
 // event handler for create trigger button
 document.getElementById("addTriggers").addEventListener("click", function(){
     $("#triggerForm").show(); 
@@ -13,10 +20,7 @@ document.getElementById("addTriggers").addEventListener("click", function(){
 
 // event handler for cancel a trigger creation
 document.getElementById("cancelTrigger").addEventListener("click", function(){
-    $("#triggerRow").empty();
-    $("#targets").empty();
-    $("#triggerForm").hide(); 
-    numTargets = 0;
+	closeCreateTriggerUI();
 },false);
 
 
@@ -36,11 +40,11 @@ document.getElementById("saveTrigger").addEventListener("click", function(){
     
     //prepare for the query
     var transformedComp = {">":"gt", "<":"lt", "=":"eq"};
-    var transformedProperty = {"Rpms":"010c","speed":"010d", "fuel":"012f", "pedal position":"0149"};
+    var transformedProperty = {"rpms":"010c","speed":"010d", "fuel":"012f", "pedal position":"0149"};
     var trigger = {
         "thing":thing,
-        "property":transformedProperty.property,
-        "comparator":transformedComp.comparator,
+        "property":transformedProperty[property],
+        "comparator":transformedComp[comparator],
         "value": value,
         "targets":targets,
         "message": message
@@ -48,11 +52,17 @@ document.getElementById("saveTrigger").addEventListener("click", function(){
     $.ajax({
         type: "POST",
         url: "http://car.ejvaughan.com/triggers",
-        beforeSend: function(xhr) {
-            xhr.setRequestHeader( "Content-type", "application/json" );
-        },
+	contentType: 'application/json',
         data: JSON.stringify(trigger),
-        success: getListOfTriggers(), // once succefully created a trigger, reload the triggers
+        success: function(data, stat, req) {
+		if (data.success) {
+			getListOfTriggers();
+			closeCreateTriggerUI();
+		} else {
+			console.log("Error creating trigger: " + JSON.stringify(data));
+			alert("There was an error creating the trigger. Please try again.");
+		}
+}, // once succefully created a trigger, reload the triggers
         error: function(xhr, ajaxOptions, thrownError) {
             alert("Failed to add target" + xhr.statusText);
         }
@@ -83,7 +93,7 @@ function getTargets(){
  */ 
 function getListOfTriggers(){
     $("#triggersBody").empty();
-    $.post("http://car.ejvaughan.com/things", function(data){
+    $.getJSON("http://car.ejvaughan.com/things", function(data){
         if(!data.success){pushAlert("Cannot get Things and triggers"); return;}
         for(var i =0; i < data.things.length; ++i){
             listTriggers(data.things[i], data.things[i].name);
@@ -97,6 +107,21 @@ function getListOfTriggers(){
  * function to list all triggers for ONE thing
  */ 
 function listTriggers(data, name){
+	var transformedProperty = {
+		"010c": "rpms",
+		"010d": "speed",
+		"012f": "fuel",
+		"0105": "engine coolant temperature",
+		"011f": "system uptime",
+		"0149": "pedal position"
+	};
+
+	var transformedComparator = {
+		"gt": ">",
+		"lt": "<",
+		"eq": "="
+	};
+
     for(var i = 0; i < data.triggers.length; ++i){
         var triggersTable = document.getElementById("triggersBody");
         var row = document.createElement("tr");
@@ -105,9 +130,9 @@ function listTriggers(data, name){
         var thing = document.createElement("td");
         thing.innerHTML = name;
         var property = document.createElement("td");
-        property.innerHTML = data.triggers[i].property;
+        property.innerHTML = transformedProperty[data.triggers[i].property];
         var comparator  = document.createElement("td");
-        comparator.innerHTML = data.triggers[i].comparator;
+        comparator.innerHTML = transformedComparator[data.triggers[i].comparator];
         var value = document.createElement("td");
         value.innerHTML = data.triggers[i].value;
         var message = document.createElement("td");
@@ -152,23 +177,25 @@ function listTriggers(data, name){
             var addTargetSubmit = document.getElementById("addTargetSubmit");
             addTargetSubmit.setAttribute("name", this.name);
             addTargetSubmit.addEventListener("click", function(){
-                var selectedType = $("#addTargetSelect").find(":selected").text();
+                var selectedType = $("#addTargetSelect").val();
                 var addr = document.getElementById("addTargetAddress").value;
                 console.log(selectedType);
-                if((selectedType != "SMS" && selectedType != "Email") || addr===""){
-                    pushAlert("Please select the right type and fill the message");
-                    return;
-                }
                 var dataSend = {"type":selectedType, "address":addr};
                 // do query and update the triggers
                 $.ajax({
                     type: "POST",
                     url: "http://car.ejvaughan.com/triggers/" + this.name +"/target",
-                    beforeSend: function(xhr) {
-                        xhr.setRequestHeader( "Content-type", "application/json" );
-                    },
+		    contentType: 'application/json',
                     data: JSON.stringify(dataSend),
-                    success: getListOfTriggers(),
+                    success: function(data, stat, req) {
+				if (data.success) {
+					getListOfTriggers();
+					addTargetDialog.dialog("close");
+				} else {
+					console.log("There was an error creating the target" + JSON.stringify(data));
+					alert("Error creating target. Please try again!");
+				}
+			},
                     error: function(xhr, ajaxOptions, thrownError) {
                         alert("Failed to add target" + xhr.statusText);
                     }
@@ -187,7 +214,14 @@ function listTriggers(data, name){
             $.ajax({
                 url: "http://car.ejvaughan.com/triggers/" + this.name,
                 type:"DELETE",
-                success: getListOfTriggers()
+                success: function(data, stat, req) {
+			if (data.success) {
+				getListOfTriggers();
+			} else {
+				console.log("Error deleting target: " + JSON.stringify(data));
+				alert("There was an error deleting the target. Please try again.");
+			}
+		}
             }); 
         
         },false);
@@ -216,7 +250,7 @@ function listTriggers(data, name){
  * function to create the first row for trigger configuration
  */ 
 function createFirstRowForTrigger(){
-    var options = {"speed":"speed", "Rpms":"Rpms", "fuel":"fuel", "pedal position": "pedal position"};
+    var options = {"speed":"speed", "rpms":"rpms", "fuel":"fuel", "pedal position": "pedal position"};
     var comparators ={">":">", "<":"<", "=":"="};
 
     var row = document.createElement("tr");
@@ -265,7 +299,7 @@ function createFirstRowForTrigger(){
     var messageDiv = document.createElement("div");
     messageDiv.setAttribute("class", "col-sm-12");
     var message = document.createElement("input");
-    message.setAttribute("placeholder", "custome your message");
+    message.setAttribute("placeholder", "custom message");
     message.setAttribute("class", "form-control");
     message.setAttribute("id", "triggerMessage");
     messageDiv.appendChild(message);
@@ -284,7 +318,10 @@ function createTarget(){
     var type = document.createElement("select");
     type.setAttribute("class", "form-control");
     type.setAttribute("name", "targetType");
-    type.options[type.options.length] = new Option("Select a type", "placeholder");
+    var selectATypeOpt = new Option("Select a type", "placeholder");
+    selectATypeOpt.disabled = true;
+
+    type.options[type.options.length] = selectATypeOpt;
     type.options[type.options.length] = new Option("SMS", "sms");
     type.options[type.options.length] = new Option("Email", "email");
     typeDiv.appendChild(type);

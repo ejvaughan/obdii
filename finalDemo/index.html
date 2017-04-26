@@ -69,7 +69,7 @@
                 <table class="table table-striped" id="triggersTable" align="center">
                     <thead>
                         <th> # </th>
-                        <th> The Thing  </th>
+                        <th> Thing  </th>
                         <th> Property </th>
                         <th> Comparator </th>
                         <th> Value </th>
@@ -86,7 +86,7 @@
             <!-- div for add trigger button -->
             <div >
                 <button type="button" class ="btn btn-success col-md-12 " id="addTriggers"> 
-                    <strong> Click to Add More Triggers  </strong>
+                    <strong> Add a Trigger  </strong>
                 </button> 
             </div> 
             <div id="triggerForm" >
@@ -132,9 +132,9 @@
     
         <div id="addTargetForm" title="Add a target" class="dia-forms">
             Type: <select class="form-control" id="addTargetSelect">
-                     <option> Select a type <option>
-                     <option>SMS<option>
-                     <option>Email<option>
+                     <option disabled selected>Select a type</option>
+                     <option value="sms">SMS</option>
+                     <option value="email">Email</option>
                   </select> 
             Address: <br> <input type="text" class="form-control"  id="addTargetAddress"/> <br>
             <br> 
