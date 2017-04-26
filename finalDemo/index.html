@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>CSE521S </title>
+       <title>CSE521S </title>
         <link rel="stylesheet" href="styles.css">
         
     </head>
@@ -66,19 +66,18 @@
         <!-- trigger div -->
         <div id="triggers">
             <div  class="table-responsive">
-                <table class="table" id="triggersTable">
+                <table class="table table-striped" id="triggersTable" align="center">
                     <thead>
                         <th> # </th>
                         <th> The Thing  </th>
                         <th> Property </th>
                         <th> Comparator </th>
                         <th> Value </th>
-                        <th> Target Type </th>
-                        <th> Target Address </th>
+                        <th> Targets</th>
                         <th> Message </th>
                         <th> Actions </th>
                     </thead> 
-                    <tbody >
+                    <tbody id="triggersBody">
 
                     </tbody>    
                 </table>
@@ -86,8 +85,31 @@
             
             <!-- div for add trigger button -->
             <div >
-                <button type="button" class ="btn btn-success col-md-12"> <strong> Click to Add More Triggers  </strong></button> 
-            </div>    
+                <button type="button" class ="btn btn-success col-md-12 " id="addTriggers"> 
+                    <strong> Click to Add More Triggers  </strong>
+                </button> 
+            </div> 
+            <div id="triggerForm" >
+                <table class="table table-bordered">
+                    <tr id="triggerRow">
+                    <!-- row to configure a trigger -->
+                    </tr>
+                </table>
+                <div id="targets">
+                    <!-- add row for target-->
+                </div>
+                <!-- div for cancle and save button -->
+                <div >
+                    <button type="button" class ="btn btn-danger col-md-6 " id="cancelTrigger"> 
+                        <strong> Cancel  </strong>
+                    </button> 
+                    <button type="button" class ="btn btn-success col-md-6 " id="saveTrigger"> 
+                        <strong> Save  </strong>
+                    </button> 
+                </div> 
+            </div>
+
+
         </div>
 
         <!--forms for registering-->
@@ -100,7 +122,7 @@
         </div>
 
         <!--forms for login-->
-        <div id="loginForm" title="Register" class="dia-forms">
+        <div id="loginForm" title="Login" class="dia-forms">
             Email: <br> <input type="text" name="email" id="loginEmail"/> <br>
             Password: <br> <input type="password" name="loginPassword" id="loginPassword"/> <br>
             <br> 
@@ -108,6 +130,16 @@
         </div>
          
     
+        <div id="addTargetForm" title="Add a target" class="dia-forms">
+            Type: <select class="form-control" id="addTargetSelect">
+                     <option> Select a type <option>
+                     <option>SMS<option>
+                     <option>Email<option>
+                  </select> 
+            Address: <br> <input type="text" class="form-control"  id="addTargetAddress"/> <br>
+            <br> 
+            <input type="button" id="addTargetSubmit" value="add" />
+        </div>
 
 
 
@@ -129,6 +161,7 @@
         <script src="dynamodb.js"></script>
         <script src="utility.js"></script>
         <script src="trends.js"></script>
+        <script src="triggers.js"></script>
         <script src="index.js"></script>
     </body>
 

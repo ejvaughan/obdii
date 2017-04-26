@@ -32,10 +32,8 @@ document.getElementById("trendsButton").addEventListener("click", function(){
 $("#triggers").hide(); //default is hide
 document.getElementById("triggersButton").addEventListener("click", function(){
     console.log("triggers button is clicked -->");
-    //if(!loggedIn){pushAlert("Please log in first"); return;}
-    
+    if(!loggedIn){pushAlert("Please log in first"); return;}
     getListOfTriggers();
-
     $("#triggers").show();
     $("#trends").hide();
     $("#imageContainer").hide();
