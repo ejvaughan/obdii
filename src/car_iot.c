@@ -263,17 +263,17 @@ int main(int argc, char** argv) {
 				unsigned char mode = OBDIICommandGetMode(command);
 				unsigned char PID = OBDIICommandGetPID(command);
 
-				char prevPropertyName[10];
-				prevPropertyName[9] = '\0';
-				sprintf(prevPropertyName, "prev%02x:%02x", mode, PID);
+				char prevPropertyName[9];
+				prevPropertyName[8] = '\0';
+				sprintf(prevPropertyName, "prev%02x%02x", mode, PID);
 				
 				jsonStruct_t prevKeyValuePair;
 				prevKeyValuePair.cb = NULL;
 				prevKeyValuePair.pKey = prevPropertyName;
 
-				char propertyName[10];
-				propertyName[9] = '\0';
-				sprintf(propertyName, "curr%02x:%02x", mode, PID);
+				char propertyName[9];
+				propertyName[8] = '\0';
+				sprintf(propertyName, "curr%02x%02x", mode, PID);
 
 				jsonStruct_t keyValuePair;
 				keyValuePair.cb = NULL;
