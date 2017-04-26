@@ -188,6 +188,21 @@ Example trigger.json:
 }
 ```
 
+Supported values for `property` include:
+
+* `eq`: Equality
+* `gt`: Greater than
+* `lt`: Less than
+
+Supported property names include:
+
+* `010c`: Engine RPMs
+* `010d`: Vehicle speed
+* `012f`: Fuel level
+* `0105`: Engine coolant temperature
+* `011f`: System uptime
+* `0149`: Accelerator pedal position
+
 Example JSON response:
 
 ```json
