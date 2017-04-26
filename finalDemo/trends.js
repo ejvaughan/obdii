@@ -1,5 +1,5 @@
 
-var table = "test10"; // table to query
+var table = "finalDemo"; // table to query
 var numRows = 0;      // number of rows of linechart
 var numCols = 0;     // the column NO. of the latest line chart
 
@@ -101,10 +101,10 @@ function getPieData(data){
     var categories = {"leThirty":0, "thirtyToSixty":0, "sixtyToNinety":0, "gtNinety":0};
     console.log("...." + data.Count);
     for(var i = 0; i < data.Count; ++i){
-        var temperature = items[i].temperature;
-        if(temperature < 30) categories.leThirty++;
-        else if(temperature >= 30 && temperature<60) categories.thirtyToSixty++;
-        else if(temperature >= 60 && temperature<90) categories.sixtyToNinety++;
+        var speed = items[i].speed;
+        if(speed < 30) categories.leThirty++;
+        else if(speed >= 30 && speed<60) categories.thirtyToSixty++;
+        else if(speed >= 60 && speed<90) categories.sixtyToNinety++;
         else categories.gtNinety++;
     }
     var result = [categories.leThirty, categories.thirtyToSixty, categories.sixtyToNinety, categories.gtNinety];
@@ -159,7 +159,7 @@ function getLineData(data){
         var curTime = getTime(currentDate + SPACE + items[i].time);
         if(curTime - prev < 12000){  // difference between two times is within 4 seconds
             labelPath.push(items[i].time);
-            dataPath.push(items[i].temperature);
+            dataPath.push(items[i].speed);
             prev = curTime;
             continue;
         }
