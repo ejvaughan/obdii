@@ -1,6 +1,6 @@
 
 var numTargets = 0; // variable used to keep track of number of targets created in creating a trigger
-var options = {"speed":"speed", "rpms":"rpms", "fuel":"fuel", "pedal position": "pedal position"};
+var options = {"speed(mph)":"speed", "rpms":"rpms", "fuel(%)":"fuel", "pedal position(%)": "pedal position"};
 var comparators ={">":">", "<":"<", "=":"="};
 var things = {};
 
