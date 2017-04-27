@@ -1,5 +1,8 @@
 
 var numTargets = 0; // variable used to keep track of number of targets created in creating a trigger
+var options = {"speed":"speed", "rpms":"rpms", "fuel":"fuel", "pedal position": "pedal position"};
+var comparators ={">":">", "<":"<", "=":"="};
+var things = {};
 
 function closeCreateTriggerUI() {
     $("#triggerRow").empty();
@@ -33,7 +36,7 @@ document.getElementById("saveTrigger").addEventListener("click", function(){
     var value = document.getElementById("triggerValue").value;
     var message = document.getElementById("triggerMessage").value;
     console.log(" ---> " + "  " + thing + "  " +property + "  " + comparator + " " +value + " " + message);
-    if(thing === "" || property === "palceholder" || comparator ==="placeholder" || value ==="" || message === ""){
+    if(thing === "placeholder" || property === "palceholder" || comparator ==="placeholder" || value ==="" || message === ""){
         pushAlert("Please fill the trigger form correctly");
         return;
     }
@@ -96,7 +99,8 @@ function getListOfTriggers(){
     $.getJSON("http://car.ejvaughan.com/things", function(data){
         if(!data.success){pushAlert("Cannot get Things and triggers"); return;}
         for(var i =0; i < data.things.length; ++i){
-            listTriggers(data.things[i], data.things[i].name);
+            things[data.things[i].name] = data.things[i].name; //update the things variable for creating trigger use
+            listTriggers(data.things[i], data.things[i].name); 
         }
         console.log("triggers listed");
     });
@@ -250,14 +254,14 @@ function listTriggers(data, name){
  * function to create the first row for trigger configuration
  */ 
 function createFirstRowForTrigger(){
-    var options = {"speed":"speed", "rpms":"rpms", "fuel":"fuel", "pedal position": "pedal position"};
-    var comparators ={">":">", "<":"<", "=":"="};
 
     var row = document.createElement("tr");
 
     var thingDiv = document.createElement("div");
     thingDiv.setAttribute("class", "col-sm-3");
-    var thingName = document.createElement("input");
+    var thingName = document.createElement("select");
+    thingName.options[thingName.options.length] = new Option("Name of the thing", "placeholder");
+    for(var index in things) thingName.options[thingName.options.length] = new Option(things[index], index);
     thingName.setAttribute("placeholder", "Name of the thing");
     thingName.setAttribute("class", "form-control");
     thingName.setAttribute("id", "triggerThing");
