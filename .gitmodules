@@ -7,3 +7,6 @@
 [submodule "EasyArgs"]
 	path = EasyArgs
 	url = https://github.com/ejvaughan/EasyArgs.git
+[submodule "Unity"]
+	path = Unity
+	url = https://github.com/ThrowTheSwitch/Unity.git
