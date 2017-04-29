@@ -8,7 +8,7 @@ In addition, bindings are available for Python, allowing the API to be used from
 
 ## Dependencies
 
-The communication layer of the API uses the ISO-TP transport protocol for its socket communication (as opposed to using a raw CAN socket). This protocol is implemented in a kernel module, but unfortunately the module has not yet been merged into Linux trunk. The code for the module is available [here](https://github.com/hartkopp/can-isotp-modules).
+The communication layer of the API uses the ISO-TP transport protocol for its socket communication (as opposed to using a raw CAN socket). This protocol is implemented in a separate kernel module, whose code is available [here](https://github.com/hartkopp/can-isotp-modules).
 
 In order to use the functions in `OBDIICommunication.h`, as well as the command line utility, the kernel module must be built and installed. The module's [README](https://github.com/hartkopp/can-isotp-modules/blob/master/README.isotp) has instructions for how to do this.
 
@@ -24,7 +24,7 @@ The API is functionally separated into two layers: the protocol layer and the co
 
 The protocol layer is used to construct OBD-II requests and decode responses. It abstracts away all the details of message payloads, providing a simple interface to the diagnostic data via two types: `OBDIICommand`, which represents a request, and `OBDIIResponse`, which holds a decoded response. Given a particular diagnostic of interest (an instance of `OBDIICommand`), the protocol layer constructs the raw bytes that compose the request. Similarly, given the raw bytes of the response, the protocol layer decodes the bytes into an `OBDIIResponse` object so that the underlying diagnostic data can be accessed. In this way, the protocol layer is entirely agnostic to how communication with the car actually occurs.
 
-The protocol layer is implemented in `OBDII.c`, whose public interface is `OBDII.h`. Interacting with the protocol layer involves choosing a diagnostic (an instance of `OBDIICommand`) from a predefined list. The `payload` property contains the raw bytes of the request. Parsing a response involves calling `OBDIIDecodeResponseForCommand`, which decodes the raw bytes into an `OBDIIResponse` object containing the diagnostic data.
+The protocol layer is implemented in `OBDII.h`. Interacting with the protocol layer involves choosing a diagnostic (an instance of `OBDIICommand`) from a predefined list. The `payload` property contains the raw bytes of the request. Parsing a response involves calling `OBDIIDecodeResponseForCommand`, which decodes the raw bytes into an `OBDIIResponse` object containing the diagnostic data.
 
 The work of the protocol layer (request -> raw bytes; raw bytes -> response) occurs transparently when you interact with the communication layer, which means you never have to use `payload` or `OBDIIDecodeResponseForCommand` yourself. Instead, you will just interact with the `OBDIICommand` and `OBDIIResponse` types. 
 
@@ -60,8 +60,8 @@ OBDIICloseSocket(s);
 ### Using in your own projects
 
 1. Clone the repo: `git clone --recursive git@github.com:ejvaughan/cse521.git`
-2. `cd` into the project directory and run `make shared`
-3. This will produce a dynamic library named `libobdii.so` in the `build/` subdirectory. Link against this library, and include `OBDII.h` and `OBDIICommunication.h` in your project.
+2. `cd` into the project directory and run `make shared`. This will produce a dynamic library named `libobdii.so` in the `build/` subdirectory. 
+3. Link against this library, and include `OBDII.h` and `OBDIICommunication.h` in your project.
 
 ### Python bindings
 
@@ -69,7 +69,13 @@ OBDIICloseSocket(s);
 
 ## OBD-II command line interface
 
-< description goes here >
+
+
+### Building
+
+1. Clone the repo: `git clone --recursive git@github.com:ejvaughan/cse521.git`
+2. `cd` into the project directory and run `make cli`. This will produce an executable named `cli` in the `build/` subdirectory.
+3. Run: `$ ./cli`
 
 ### Usage
 
