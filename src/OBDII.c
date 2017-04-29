@@ -100,12 +100,14 @@ void OBDIIDecodeFuelPressure(OBDIIResponse *response, unsigned char *responsePay
 
 void OBDIIDecodeDTCs(OBDIIResponse *response, unsigned char *responsePayload, int len)
 {
-	#define RawToAscii(raw) (((raw) > 9) ? 'A' + (raw) - 9 : '0' + (raw))
+	#define RawToAscii(raw) (((raw) > 9) ? 'A' + (raw) - 10 : '0' + (raw))
 
 	const int bytesPerDTC = 2;
 
-	int numBytes = len - 1;
-	if (numBytes % bytesPerDTC != 0) {
+	// Sanity check
+	int numBytes = len - 2;
+	if (numBytes < 0 || numBytes % bytesPerDTC != 0) {
+		response->success = 0;
 		return;
 	}
 
@@ -115,7 +117,7 @@ void OBDIIDecodeDTCs(OBDIIResponse *response, unsigned char *responsePayload, in
 
 	int i;
 	for (i = 0; i < numDTCs; i++) {
-		int offset = 1 + i * bytesPerDTC;
+		int offset = 2 + i * bytesPerDTC;
 		unsigned char a = responsePayload[offset];
 		unsigned char b = responsePayload[offset + 1];
 
