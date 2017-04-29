@@ -7,16 +7,23 @@ CC = gcc
 #remove @ for no make command prints
 DEBUG=@
 
+LIBRARY_INCLUDE_DIRS = -I src
+LIBRARY_SRC_DIR = src
+LIBRARY_SRC_FILES=$(LIBRARY_SRC_DIR)/OBDII.c $(LIBRARY_SRC_DIR)/OBDIICommunication.c
+
 APP_DIR = src
 APP_INCLUDE_DIRS += -I $(APP_DIR)
 APP_INCLUDE_DIRS += -I EasyArgs
 APP_INCLUDE_DIRS += -I EasyArgs/uthash/include
-LIBRARY_INCLUDE_DIRS = -I src
-LIBRARY_SRC_FILES=src/OBDII.c src/OBDIICommunication.c
 APP_SRC_FILES=$(LIBRARY_SRC_FILES) EasyArgs/EasyArgs.c
+
 BUILD_DIR = build
 
-LOCAL_TARGET_NAME = car_local
+UNITY_ROOT = Unity
+TESTS_INCLUDE_DIRS = $(LIBRARY_INCLUDE_DIRS) -I$(UNITY_ROOT)/src -I$(UNITY_ROOT)/extras/fixture/src
+TESTS_SRC_FILES = $(LIBRARY_SRC_FILES) $(UNITY_ROOT)/src/unity.c $(UNITY_ROOT)/extras/fixture/src/unity_fixture.c tests/*.c tests/test_runners/*.c
+
+CLI_TARGET_NAME = cli
 IOT_TARGET_NAME = car_iot
 
 #IoT client directory
@@ -82,17 +89,19 @@ LOG_FLAGS += -DIOT_ERROR
 COMPILER_FLAGS += -g 
 COMPILER_FLAGS += $(LOG_FLAGS)
 
-LOCAL_TARGET_MAKE_CMD = $(CC) $(APP_DIR)/$(LOCAL_TARGET_NAME).c $(APP_SRC_FILES) $(COMPILER_FLAGS) -o $(BUILD_DIR)/$(LOCAL_TARGET_NAME) $(APP_INCLUDE_DIRS)
+CLI_TARGET_MAKE_CMD = $(CC) $(APP_DIR)/$(CLI_TARGET_NAME).c $(APP_SRC_FILES) $(COMPILER_FLAGS) -o $(BUILD_DIR)/$(CLI_TARGET_NAME) $(APP_INCLUDE_DIRS)
 
 IOT_TARGET_MAKE_CMD = $(CC) $(APP_DIR)/$(IOT_TARGET_NAME).c $(IOT_TARGET_SRC_FILES) $(COMPILER_FLAGS) -o $(BUILD_DIR)/$(IOT_TARGET_NAME) $(EXTERNAL_LIBS) $(LD_FLAG) $(INCLUDE_ALL_DIRS)
 
 SHARED_LIBRARY_MAKE_CMD = $(CC) $(LIBRARY_SRC_FILES) $(COMPILER_FLAGS) -fpic -shared -o $(BUILD_DIR)/libobdii.so $(LIBRARY_INCLUDE_DIRS)
 
-all: local iot
+.PHONY: tests
 
-local:
+all: cli iot
+
+cli:
 	@mkdir -p $(BUILD_DIR)
-	$(DEBUG)$(LOCAL_TARGET_MAKE_CMD)
+	$(DEBUG)$(CLI_TARGET_MAKE_CMD)
 
 iot:
 	@mkdir -p $(BUILD_DIR)
@@ -101,6 +110,11 @@ iot:
 shared:
 	@mkdir -p $(BUILD_DIR)
 	$(DEBUG)$(SHARED_LIBRARY_MAKE_CMD)
+
+tests:
+	@mkdir -p $(BUILD_DIR)
+	$(DEBUG)$(CC) $(COMPILER_FLAGS) $(TESTS_SRC_FILES) $(TESTS_INCLUDE_DIRS) -o $(BUILD_DIR)/tests
+	- $(BUILD_DIR)/tests -v
 	
 clean:
 	rm -f $(BUILD_DIR)/*
