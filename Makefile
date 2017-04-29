@@ -7,14 +7,14 @@ CC = gcc
 #remove @ for no make command prints
 DEBUG=@
 
-APP_DIR = .
+APP_DIR = src
 APP_INCLUDE_DIRS += -I $(APP_DIR)
-APP_INCLUDE_DIRS += -I ../EasyArgs
-APP_INCLUDE_DIRS += -I ../EasyArgs/uthash/include
-LIBRARY_INCLUDE_DIRS = -I .
-LIBRARY_SRC_FILES=OBDII.c OBDIICommunication.c
-APP_SRC_FILES=$(LIBRARY_SRC_FILES) ../EasyArgs/EasyArgs.c
-BUILD_DIR = ../build
+APP_INCLUDE_DIRS += -I EasyArgs
+APP_INCLUDE_DIRS += -I EasyArgs/uthash/include
+LIBRARY_INCLUDE_DIRS = -I src
+LIBRARY_SRC_FILES=src/OBDII.c src/OBDIICommunication.c
+APP_SRC_FILES=$(LIBRARY_SRC_FILES) EasyArgs/EasyArgs.c
+BUILD_DIR = build
 
 LOCAL_TARGET_NAME = car_local
 IOT_TARGET_NAME = car_iot
@@ -22,7 +22,7 @@ IOT_TARGET_NAME = car_iot
 #IoT client directory
 
 
-IOT_CLIENT_DIR=../linux_mqtt_openssl-latest/aws_iot_src
+IOT_CLIENT_DIR=linux_mqtt_openssl-latest/aws_iot_src
 
 PLATFORM_DIR = $(IOT_CLIENT_DIR)/protocol/mqtt/aws_iot_embedded_client_wrapper/platform_linux/openssl
 PLATFORM_COMMON_DIR = $(IOT_CLIENT_DIR)/protocol/mqtt/aws_iot_embedded_client_wrapper/platform_linux/common
@@ -46,7 +46,7 @@ IOT_SRC_FILES += $(shell find $(PLATFORM_DIR)/ -name '*.c')
 IOT_SRC_FILES += $(shell find $(PLATFORM_COMMON_DIR)/ -name '*.c')
 
 #MQTT Paho Embedded C client directory
-MQTT_DIR = ../linux_mqtt_openssl-latest/aws_mqtt_embedded_client_lib
+MQTT_DIR = linux_mqtt_openssl-latest/aws_mqtt_embedded_client_lib
 MQTT_C_DIR = $(MQTT_DIR)/MQTTClient-C/src
 MQTT_EMB_DIR = $(MQTT_DIR)/MQTTPacket/src
 
@@ -82,9 +82,9 @@ LOG_FLAGS += -DIOT_ERROR
 COMPILER_FLAGS += -g 
 COMPILER_FLAGS += $(LOG_FLAGS)
 
-LOCAL_TARGET_MAKE_CMD = $(CC) $(LOCAL_TARGET_NAME).c $(APP_SRC_FILES) $(COMPILER_FLAGS) -o $(BUILD_DIR)/$(LOCAL_TARGET_NAME) $(APP_INCLUDE_DIRS)
+LOCAL_TARGET_MAKE_CMD = $(CC) $(APP_DIR)/$(LOCAL_TARGET_NAME).c $(APP_SRC_FILES) $(COMPILER_FLAGS) -o $(BUILD_DIR)/$(LOCAL_TARGET_NAME) $(APP_INCLUDE_DIRS)
 
-IOT_TARGET_MAKE_CMD = $(CC) $(IOT_TARGET_NAME).c $(IOT_TARGET_SRC_FILES) $(COMPILER_FLAGS) -o $(BUILD_DIR)/$(IOT_TARGET_NAME) $(EXTERNAL_LIBS) $(LD_FLAG) $(INCLUDE_ALL_DIRS)
+IOT_TARGET_MAKE_CMD = $(CC) $(APP_DIR)/$(IOT_TARGET_NAME).c $(IOT_TARGET_SRC_FILES) $(COMPILER_FLAGS) -o $(BUILD_DIR)/$(IOT_TARGET_NAME) $(EXTERNAL_LIBS) $(LD_FLAG) $(INCLUDE_ALL_DIRS)
 
 SHARED_LIBRARY_MAKE_CMD = $(CC) $(LIBRARY_SRC_FILES) $(COMPILER_FLAGS) -fpic -shared -o $(BUILD_DIR)/libobdii.so $(LIBRARY_INCLUDE_DIRS)
 
