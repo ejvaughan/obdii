@@ -10,11 +10,11 @@ In addition, bindings are available for Python, allowing the API to be used from
 
 The communication layer of the API uses the ISO-TP transport protocol for its socket communication (as opposed to using a raw CAN socket). This protocol is implemented in a kernel module, but unfortunately the module has not yet been merged into Linux trunk. The code for the module is available [here](https://github.com/hartkopp/can-isotp-modules).
 
-In order to use the functions in `OBDIICommunication.c`, as well as the command line utility, the kernel module must be built and installed. The module's [README](https://github.com/hartkopp/can-isotp-modules/blob/master/README.isotp) has instructions for how to do this.
+In order to use the functions in `OBDIICommunication.h`, as well as the command line utility, the kernel module must be built and installed. The module's [README](https://github.com/hartkopp/can-isotp-modules/blob/master/README.isotp) has instructions for how to do this.
 
 ## Hardware
 
-This API is designed to work with any vehicle that is exposed on the local machine as a CAN network interface. Therefore, any OBD-II adaptor that exposes itself as a CAN device can be used. For example, the [PiCAN2](http://skpang.co.uk/catalog/pican2-canbus-board-for-raspberry-pi-23-p-1475.html) is such an adaptor for the Raspberry Pi. Linux supports a family of sockets specifically for CAN communication (the PF_CAN protocol family), which the API uses for communicating with the vehicle.
+This API is designed to work with any vehicle that is exposed on the local machine as a CAN network interface. Therefore, any OBD-II adaptor that exposes itself as a CAN device can be used. For example, the [PiCAN2](http://skpang.co.uk/catalog/pican2-canbus-board-for-raspberry-pi-23-p-1475.html) is such an adaptor for the Raspberry Pi. Linux supports a family of sockets specifically for CAN communication (the `PF_CAN` protocol family), which the API uses for communicating with the vehicle.
 
 ## OBD-II API
 
@@ -30,7 +30,27 @@ The work of the protocol layer (request -> raw bytes; raw bytes -> response) occ
 
 ### Communication layer
 
-< fill me in >
+The communication layer is responsible for actually communicating with a connected vehicle. The vehicle must be exposed as a CAN network interface. The main functions you will interact with are `OBDIIOpenSocket`, `OBDIIPerformQuery`, and `OBDIIGetSupportedCommands` (contained in `OBDIICommunication.h`). To give you an example of how easy it is to start reading diagnostic data, observe:
+
+```C
+int s = OBDIIOpenSocket("can0", 0x7E0, 0x7E8); // Talk to the engine ECU
+if (s < 0) {
+    printf("Error opening socket: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+}
+
+OBDIICommandSet supportedCommands = OBDIIGetSupportedCommands(s);
+if (OBDIICommandSetContainsCommand(&supportedCommands, OBDIICommands.engineRPMs)) {
+    OBDIIResponse response = OBDIIPerformQuery(s, OBDIICommands.engineRPMs);
+    if (response.success) {
+        printf("Got engine RPMs: %.2f\n", response.numericValue);
+    }
+    OBDIIResponseFree(&response);
+}
+
+OBDIICommandSetFree(&supportedCommands);
+OBDIICloseSocket(s);
+```
 
 ### Using in your own projects
 
