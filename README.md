@@ -39,12 +39,17 @@ if (s < 0) {
     exit(EXIT_FAILURE);
 }
 
+// Query the car for the commands it supports
 OBDIICommandSet supportedCommands = OBDIIGetSupportedCommands(s);
+
 if (OBDIICommandSetContainsCommand(&supportedCommands, OBDIICommands.engineRPMs)) {
+    // Query the diagnostic data
     OBDIIResponse response = OBDIIPerformQuery(s, OBDIICommands.engineRPMs);
+
     if (response.success) {
         printf("Got engine RPMs: %.2f\n", response.numericValue);
     }
+
     OBDIIResponseFree(&response);
 }
 
