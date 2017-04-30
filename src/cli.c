@@ -55,14 +55,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libgen.h>
-
 #include <net/if.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <signal.h>
 #include <errno.h>
-
+#include <time.h>
 #include <linux/can.h>
 
 #include "OBDII.h"
@@ -84,7 +83,7 @@ void handleInterrupted(int signum)
 
 int main(int argc, char **argv)
 {
-    int s;
+    OBDIISocket s;
     int opt, i;
     extern int optind, opterr, optopt;
     canid_t tx_id = NO_CAN_ID, rx_id = NO_CAN_ID;
@@ -128,14 +127,14 @@ int main(int argc, char **argv)
 
     sigaction(SIGINT, &interruptSignalAction, NULL);
 
-    if ((s = OBDIIOpenSocket(argv[optind], tx_id, rx_id)) < 0) {
+    if ((OBDIIOpenSocket(&s, argv[optind], tx_id, rx_id, 0)) < 0) {
 	printf("Error connecting to vehicle: %s\n", strerror(errno));
     	exit(EXIT_FAILURE);
     }
     
     printf("Supported commands:\n");
 
-	OBDIICommandSet supportedCommands = OBDIIGetSupportedCommands(s);
+	OBDIICommandSet supportedCommands = OBDIIGetSupportedCommands(&s);
 
 	for (i = 0; i < supportedCommands.numCommands; ++i) {
 		OBDIICommand *command = supportedCommands.commands[i];
@@ -167,7 +166,7 @@ int main(int argc, char **argv)
 			printf("Querying mode %02x PID %02x...\n", OBDIICommandGetMode(command), OBDIICommandGetPID(command));
 
 			do {
-				OBDIIResponse response = OBDIIPerformQuery(s, command);
+				OBDIIResponse response = OBDIIPerformQuery(&s, command);
 
 				if (response.success) {
 					printf("Retrieved: ");
@@ -213,7 +212,7 @@ int main(int argc, char **argv)
 
     OBDIICommandSetFree(&supportedCommands);
 
-    OBDIICloseSocket(s);
+    OBDIICloseSocket(&s);
 
     return 0;
 }

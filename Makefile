@@ -7,12 +7,15 @@ CC = gcc
 #remove @ for no make command prints
 DEBUG=@
 
-LIBRARY_INCLUDE_DIRS = -I src
-LIBRARY_SRC_DIR = src
-LIBRARY_SRC_FILES=$(LIBRARY_SRC_DIR)/OBDII.c $(LIBRARY_SRC_DIR)/OBDIICommunication.c
+LIBRARY_INCLUDE_DIRS = -I src -I src/libancillary
+LIBRARY_SRC_FILES=src/OBDII.c src/OBDIICommunication.c src/libancillary/fd_recv.c
+
+DAEMON_SRC_FILES = src/OBDIIDaemon.c src/libancillary/fd_send.c src/libancillary/fd_recv.c
+DAEMON_INCLUDE_DIRS = -I src -I src/libancillary
 
 APP_DIR = src
 APP_INCLUDE_DIRS += -I $(APP_DIR)
+APP_INCLUDE_DIRS += -I src/libancillary
 APP_INCLUDE_DIRS += -I EasyArgs
 APP_INCLUDE_DIRS += -I EasyArgs/uthash/include
 APP_SRC_FILES=$(LIBRARY_SRC_FILES) EasyArgs/EasyArgs.c
@@ -110,6 +113,10 @@ iot:
 shared:
 	@mkdir -p $(BUILD_DIR)
 	$(DEBUG)$(SHARED_LIBRARY_MAKE_CMD)
+
+daemon:
+	@mkdir -p $(BUILD_DIR)
+	$(DEBUG)$(CC) $(COMPILER_FLAGS) $(DAEMON_SRC_FILES) $(DAEMON_INCLUDE_DIRS) -o $(BUILD_DIR)/obdiid
 
 tests:
 	@mkdir -p $(BUILD_DIR)

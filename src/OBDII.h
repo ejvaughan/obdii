@@ -2,6 +2,8 @@
 #define __OBDII_H
 #include <stdint.h>
 
+#define OBDII_API_VERSION 1
+
 #define VARIABLE_RESPONSE_LENGTH 0
 
 struct OBDIICommand; // Forward declaration

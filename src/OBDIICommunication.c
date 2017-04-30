@@ -1,37 +1,164 @@
 #include "OBDIICommunication.h"
+#include "OBDIIDaemon.h"
 #include <stdlib.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <sys/types.h>
 #include <net/if.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdio.h>
+#include <errno.h>
+#include <sys/file.h>
+#include "ancillary.h"
 
 #define MAX_ISOTP_PAYLOAD 4095
 
-int OBDIIOpenSocket(const char *ifname, canid_t tx_id, canid_t rx_id)
-{
-	int s;
-	struct sockaddr_can addr;
+// Used for communicating with the daemon
+static int daemonSocket = -1;
 
-	addr.can_addr.tp.tx_id = tx_id;
-	addr.can_addr.tp.rx_id = rx_id;
-	    addr.can_family = AF_CAN;
-	    addr.can_ifindex = if_nametoindex(ifname);
+static int setupDaemonCommunication() {
+	if (daemonSocket != -1) {
+		return 0;
+	}	
 
-	    if ((s = socket(PF_CAN, SOCK_DGRAM, CAN_ISOTP)) < 0) {
-			return -1;
-	    }
+	struct sockaddr_un daemonAddr, selfAddr;
+	if ((daemonSocket = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0) {
+		return -1;
+	}
 
-	    if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-			close(s);
-			return -1;
-	    }
+	memset(&selfAddr, 0, sizeof(struct sockaddr_un));
+	selfAddr.sun_family = AF_UNIX;
+	snprintf(selfAddr.sun_path, sizeof(selfAddr.sun_path), "/tmp/obdii.%ld", (long)getpid());
 
-	    return s;
+	if (unlink(selfAddr.sun_path) < 0 && errno != ENOENT) {
+		return -1;
+	}
+
+	if (bind(daemonSocket, (struct sockaddr *)&selfAddr, sizeof(struct sockaddr_un)) < 0) {
+		return -1;
+	}
+
+	memset(&daemonAddr, 0, sizeof(struct sockaddr_un));
+	daemonAddr.sun_family = AF_UNIX;
+	strncpy(daemonAddr.sun_path, OBDII_DAEMON_SOCKET_PATH, sizeof(daemonAddr.sun_path) - 1);
+
+	// Even though this is a connection-less socket, by using connect we can use send and recv calls instead of sendto/recvfrom
+	if (connect(daemonSocket, (struct sockaddr *)&daemonAddr, sizeof(struct sockaddr_un)) < 0) {
+		return -1;
+	}
+
+	return 0;
 }
 
-void OBDIICloseSocket(int s)
+int OBDIIOpenSocket(OBDIISocket *obdiiSocket, const char *ifname, canid_t tx_id, canid_t rx_id, int shared)
 {
-	close(s);
+	unsigned int ifindex = if_nametoindex(ifname);
+
+	if (ifindex == 0) {
+		return -1;
+	}
+
+	if (shared) {
+		if (setupDaemonCommunication() < 0) {
+			return -1;
+		}
+
+		// Send a request to the daemon to open a socket on our behalf
+		uint16_t apiVersion = OBDII_API_VERSION;
+		uint16_t requestType = OBDIIDaemonRequestOpenSocket;
+
+		// Marshal the request parameters
+		unsigned char request[16];
+		memcpy(request, &apiVersion, sizeof(apiVersion));
+		memcpy(request, &requestType, sizeof(requestType));
+		memcpy(request, &ifindex, sizeof(ifindex));
+		memcpy(request, &tx_id, sizeof(tx_id));
+		memcpy(request, &rx_id, sizeof(rx_id));
+
+		// Send the request
+		if (send(daemonSocket, request, sizeof(request), 0) != sizeof(request)) {
+			return -1;
+		}
+
+		// Receive the response
+		uint16_t responseCode;
+		if (recv(daemonSocket, &responseCode, sizeof(responseCode), 0) != sizeof(responseCode)) {
+			return -1;
+		}
+
+		if (responseCode == OBDIIDaemonResponseCodeSuccess) {
+			// Receive the socket
+			if (ancil_recv_fd(daemonSocket, &obdiiSocket->s) < 0) {
+				return -1;
+			}
+
+			obdiiSocket->shared = 1;
+		} else {
+			return -1;
+		}
+
+	} else {
+		struct sockaddr_can addr;
+		addr.can_addr.tp.tx_id = tx_id;
+		addr.can_addr.tp.rx_id = rx_id;
+		addr.can_family = AF_CAN;
+		addr.can_ifindex = ifindex;
+
+		if ((obdiiSocket->s = socket(PF_CAN, SOCK_DGRAM, CAN_ISOTP)) < 0) {
+			return -1;
+		}
+
+		if (bind(obdiiSocket->s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+			close(obdiiSocket->s);
+			return -1;
+		}
+
+		obdiiSocket->shared = 0;
+	}
+
+	return 0;
+}
+
+int OBDIICloseSocket(OBDIISocket *s)
+{
+	if (!s) {
+		return 0;
+	}
+
+	if (s->shared) {
+		if (setupDaemonCommunication() < 0) {
+			return -1;
+		}
+
+		uint16_t apiVersion = OBDII_API_VERSION;
+		uint16_t requestType = OBDIIDaemonRequestCloseSocket;
+
+		// Marshal the request parameters
+		unsigned char request[4];
+		memcpy(request, &apiVersion, sizeof(apiVersion));
+		memcpy(request, &requestType, sizeof(requestType));
+
+		// Send the request
+		if (send(daemonSocket, request, sizeof(request), 0) != sizeof(request)) {
+			return -1;
+		}
+
+		// Receive the response
+		uint16_t responseCode;
+		if (recv(daemonSocket, &responseCode, sizeof(responseCode), 0) != sizeof(responseCode)) {
+			return -1;
+		}
+
+		if (responseCode != OBDIIDaemonResponseCodeSuccess) {
+			return -1;
+		}
+	} else {
+		return close(s->s);
+	}
+
+	return 0;
 }
 
 // Counts # bits set in the argument
@@ -46,7 +173,7 @@ static inline unsigned int _BitsSet(unsigned int word)
 	return c;
 }
 
-OBDIICommandSet OBDIIGetSupportedCommands(int socket)
+OBDIICommandSet OBDIIGetSupportedCommands(OBDIISocket *socket)
 {
 	OBDIICommandSet supportedCommands = { 0 };
 	unsigned int numCommands;
@@ -140,39 +267,74 @@ void OBDIICommandSetFree(OBDIICommandSet *commandSet) {
 	}
 }
 
-OBDIIResponse OBDIIPerformQuery(int socket, OBDIICommand *command)
+static int inline LockIfNecessary(OBDIISocket *socket) {
+	if (!socket) {
+		return 0;
+	}
+
+	if (socket->shared) {
+		// This socket is shared by multiple processes, so acquire a lock
+		return flock(socket->s, LOCK_EX);
+	}
+
+	return 0;
+}
+
+static int inline UnlockIfNecessary(OBDIISocket *socket) {
+	if (!socket) {
+		return 0;
+	}
+
+	if (socket->shared) {
+		return flock(socket->s, LOCK_UN);
+	}
+
+	return 0;
+}
+
+OBDIIResponse OBDIIPerformQuery(OBDIISocket *socket, OBDIICommand *command)
 {
-		OBDIIResponse response = { 0 };
-		response.command = command;
+	OBDIIResponse response = { 0 };
+	response.command = command;
 
-		// Send the command
-	    int retval = write(socket, command->payload, sizeof(command->payload));
-	    if (retval < 0 || retval != sizeof(command->payload)) {
-			return response;
-	    }
-
-	    // Set a two second timeout
-	    struct timeval timeout;
-	    timeout.tv_sec = 2;
-	    timeout.tv_usec = 0;
-
-	    fd_set readFDs;
-	    FD_ZERO(&readFDs);
-	    FD_SET(socket, &readFDs);
-
-	    if (select(socket + 1, &readFDs, NULL, NULL, &timeout) <= 0) {
-		// Either we timed out, or there was an error
+	if (!socket) {
 		return response;
-	    }
+	}
 
-	    // Receive the response
-	    int responseLength = command->expectedResponseLength == VARIABLE_RESPONSE_LENGTH ? MAX_ISOTP_PAYLOAD : command->expectedResponseLength;
-	    unsigned char responsePayload[responseLength];
-	    retval = read(socket, responsePayload, responseLength);
+	LockIfNecessary(socket);
 
-	    if (retval < 0 || (command->expectedResponseLength != VARIABLE_RESPONSE_LENGTH && retval != command->expectedResponseLength)) {
-			return response;
-	    }
+	// Send the command
+	int retval = write(socket->s, command->payload, sizeof(command->payload));
+	if (retval < 0 || retval != sizeof(command->payload)) {
+		UnlockIfNecessary(socket);
+		return response;
+	}
 
-	    return OBDIIDecodeResponseForCommand(command, responsePayload, retval);
+	// Set a one second timeout
+	struct timeval timeout;
+	timeout.tv_sec = 1;
+	timeout.tv_usec = 0;
+
+	fd_set readFDs;
+	FD_ZERO(&readFDs);
+	FD_SET(socket->s, &readFDs);
+
+	if (select(socket->s + 1, &readFDs, NULL, NULL, &timeout) <= 0) {
+	    // Either we timed out, or there was an error
+	    UnlockIfNecessary(socket);
+	    return response;
+	}
+
+	// Receive the response
+	int responseLength = command->expectedResponseLength == VARIABLE_RESPONSE_LENGTH ? MAX_ISOTP_PAYLOAD : command->expectedResponseLength;
+	unsigned char responsePayload[responseLength];
+	retval = read(socket->s, responsePayload, responseLength);
+
+	if (retval < 0 || (command->expectedResponseLength != VARIABLE_RESPONSE_LENGTH && retval != command->expectedResponseLength)) {
+		UnlockIfNecessary(socket);
+		return response;
+	}
+
+	UnlockIfNecessary(socket);
+	return OBDIIDecodeResponseForCommand(command, responsePayload, retval);
 }
