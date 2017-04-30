@@ -5,6 +5,15 @@ from ctypes.util import find_library
 libPath = find_library('obdii')
 obdii = CDLL(libPath)
 
+class OBDIISocket(Structure):
+    _fields_ = [
+            ('s', c_int),
+            ('shared', c_short),
+            ('ifindex', c_uint),
+            ('tid', c_uint32),
+            ('rid', c_uint32)
+    ]
+
 class OBDIICommand(Structure):
     pass
 
@@ -187,19 +196,18 @@ OBDIICommandSetFree.restype = None
 OBDIICommandSetFree.argtypes = [ POINTER(OBDIICommandSet) ]
 
 OBDIIOpenSocket = obdii.OBDIIOpenSocket
-OBDIIOpenSocket.argtypes = [ c_char_p, c_uint32, c_uint32 ]
+OBDIIOpenSocket.argtypes = [ POINTER(OBDIISocket), c_char_p, c_uint32, c_uint32, c_int ]
 
 OBDIICloseSocket = obdii.OBDIICloseSocket
-OBDIICloseSocket.restype = None
-OBDIICloseSocket.argtypes = [ c_int ]
+OBDIICloseSocket.argtypes = [ POINTER(OBDIISocket) ]
 
 OBDIIPerformQuery = obdii.OBDIIPerformQuery
 OBDIIPerformQuery.restype = OBDIIResponse
-OBDIIPerformQuery.argtypes = [ c_int, POINTER(OBDIICommand) ]
+OBDIIPerformQuery.argtypes = [ POINTER(OBDIISocket), POINTER(OBDIICommand) ]
 
 OBDIIGetSupportedCommands = obdii.OBDIIGetSupportedCommands
 OBDIIGetSupportedCommands.restype = OBDIICommandSet
-OBDIIGetSupportedCommands.argtypes = [ c_int ]
+OBDIIGetSupportedCommands.argtypes = [ POINTER(OBDIISocket) ]
 
 # constants from linux/can.h
 

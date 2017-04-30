@@ -68,13 +68,17 @@ OBDIISocketConnection *openSocketConnection(unsigned int ifindex, canid_t tid, c
 		conn->ifindex = ifindex;
 		conn->refcount = 1;
 		
-		OBDIISocketConnection *curr = obdiiSockets;
 		conn->prev = NULL;
-		conn->next = curr;
+		conn->next = obdiiSockets;
+		if (obdiiSockets) {
+			obdiiSockets->prev = conn;
+		}
 		obdiiSockets = conn;
 
 		return conn;
-	} 
+	} else {
+		close(s);
+	}
 
 	return NULL;
 }
@@ -109,7 +113,7 @@ void closeSocketConnection(OBDIISocketConnection *conn)
 }
 
 static FILE *LogFile = NULL;
-static const char *LogPath = "/var/Log/obdiid/obdiid.Log";
+static const char *LogPath = "/var/log/obdiid/obdiid.log";
 
 // Logging facility
 static void Log(const char *format, ...) {
@@ -150,21 +154,23 @@ int sendResponseCode(int s, struct sockaddr_un *caddr, socklen_t caddrlen, OBDII
 	return 0;
 }
 
+#define asuint32(buf) ((buf)[0] | ((buf)[1] << 8) | ((buf)[2] << 16) | ((buf)[3] << 24))
+
 void handleSocketRequest(int s, struct sockaddr_un *caddr, socklen_t caddrlen, unsigned char *request, ssize_t requestLen, int shouldOpen)
 {
 	unsigned int ifindex;
 	canid_t tid;
 	canid_t rid;
 
-	if (requestLen < 16) {
+	if (requestLen < 12) {
 		Log("handleSocketRequest: Request payload insufficient size");
 		return;
 	}
 
 	// Unmarshall request parameters
-	ifindex = request[0] | (request[1] << 8) | (request[2] << 16) | (request[3] << 24);
-	tid = request[4] | (request[5] << 8);
-	rid = request[6] | (request[7] << 8);
+	ifindex = asuint32(request);
+	tid = asuint32(&request[4]);
+	rid = asuint32(&request[8]);
 
 	Log("Received request to %s socket: (%i, %x, %x)", (shouldOpen) ? "open" : "close", ifindex, tid, rid);
 
@@ -221,7 +227,7 @@ static void handleMessage(int s, struct sockaddr_un *caddr, socklen_t caddrlen, 
 				break;
 		}
 	} else {
-		Log("Received request for unsupported version %i; ignoring");
+		Log("Received request for unsupported version %i; ignoring", apiVersion);
 	}
 }
 
@@ -262,7 +268,7 @@ int main(int argc, char *argv[])
 	while (1) {
 		caddrlen = sizeof(struct sockaddr_un);
 		
-		if (requestLen = recvfrom(s, request, sizeof(request), 0, (struct sockaddr *)&caddr, &caddrlen) < 0) {
+		if ((requestLen = recvfrom(s, request, sizeof(request), 0, (struct sockaddr *)&caddr, &caddrlen)) < 0) {
 			Log("Error reading request: %s", strerror(errno));
 			exit(EXIT_FAILURE);
 		}

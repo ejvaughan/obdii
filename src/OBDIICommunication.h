@@ -4,9 +4,13 @@
 #include "OBDII.h"
 #include <linux/can.h>
 
+/** Opaque structure representing an OBDII socket */
 typedef struct {
 	int s;
-	int shared;
+	short shared;
+	unsigned int ifindex;
+	canid_t tid;
+	canid_t rid;
 } OBDIISocket;
 
 /** Open a communication channel to a particular ECU.

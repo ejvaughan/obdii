@@ -52,6 +52,48 @@ static int setupDaemonCommunication() {
 	return 0;
 }
 
+int requestRemoteSocket(OBDIISocket *obdiiSocket, int shouldOpen) {
+	if (setupDaemonCommunication() < 0) {
+		return -1;
+	}
+
+	// Send a request to the daemon to open/close a socket on our behalf
+	uint16_t apiVersion = OBDII_API_VERSION;
+	uint16_t requestType = (shouldOpen) ? OBDIIDaemonRequestOpenSocket : OBDIIDaemonRequestCloseSocket;
+
+	// Marshal the request parameters
+	unsigned char request[16];
+	memcpy(request, &apiVersion, sizeof(apiVersion));
+	memcpy(request, &requestType, sizeof(requestType));
+	memcpy(request, &obdiiSocket->ifindex, sizeof(obdiiSocket->ifindex));
+	memcpy(request, &obdiiSocket->tid, sizeof(obdiiSocket->tid));
+	memcpy(request, &obdiiSocket->rid, sizeof(obdiiSocket->rid));
+
+	// Send the request
+	if (send(daemonSocket, request, sizeof(request), 0) != sizeof(request)) {
+		return -1;
+	}
+
+	// Receive the response
+	uint16_t responseCode;
+	if (recv(daemonSocket, &responseCode, sizeof(responseCode), 0) != sizeof(responseCode)) {
+		return -1;
+	}
+
+	if (responseCode != OBDIIDaemonResponseCodeSuccess) {
+		return -1;
+	}
+
+	if (shouldOpen) {
+		// Receive the socket
+		if (ancil_recv_fd(daemonSocket, &obdiiSocket->s) < 0) {
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
 int OBDIIOpenSocket(OBDIISocket *obdiiSocket, const char *ifname, canid_t tx_id, canid_t rx_id, int shared)
 {
 	unsigned int ifindex = if_nametoindex(ifname);
@@ -60,45 +102,13 @@ int OBDIIOpenSocket(OBDIISocket *obdiiSocket, const char *ifname, canid_t tx_id,
 		return -1;
 	}
 
+	obdiiSocket->ifindex = ifindex;
+	obdiiSocket->tid = tx_id;
+	obdiiSocket->rid = rx_id;
+	obdiiSocket->shared = shared;
+
 	if (shared) {
-		if (setupDaemonCommunication() < 0) {
-			return -1;
-		}
-
-		// Send a request to the daemon to open a socket on our behalf
-		uint16_t apiVersion = OBDII_API_VERSION;
-		uint16_t requestType = OBDIIDaemonRequestOpenSocket;
-
-		// Marshal the request parameters
-		unsigned char request[16];
-		memcpy(request, &apiVersion, sizeof(apiVersion));
-		memcpy(request, &requestType, sizeof(requestType));
-		memcpy(request, &ifindex, sizeof(ifindex));
-		memcpy(request, &tx_id, sizeof(tx_id));
-		memcpy(request, &rx_id, sizeof(rx_id));
-
-		// Send the request
-		if (send(daemonSocket, request, sizeof(request), 0) != sizeof(request)) {
-			return -1;
-		}
-
-		// Receive the response
-		uint16_t responseCode;
-		if (recv(daemonSocket, &responseCode, sizeof(responseCode), 0) != sizeof(responseCode)) {
-			return -1;
-		}
-
-		if (responseCode == OBDIIDaemonResponseCodeSuccess) {
-			// Receive the socket
-			if (ancil_recv_fd(daemonSocket, &obdiiSocket->s) < 0) {
-				return -1;
-			}
-
-			obdiiSocket->shared = 1;
-		} else {
-			return -1;
-		}
-
+		return requestRemoteSocket(obdiiSocket, 1);
 	} else {
 		struct sockaddr_can addr;
 		addr.can_addr.tp.tx_id = tx_id;
@@ -128,37 +138,10 @@ int OBDIICloseSocket(OBDIISocket *s)
 	}
 
 	if (s->shared) {
-		if (setupDaemonCommunication() < 0) {
-			return -1;
-		}
-
-		uint16_t apiVersion = OBDII_API_VERSION;
-		uint16_t requestType = OBDIIDaemonRequestCloseSocket;
-
-		// Marshal the request parameters
-		unsigned char request[4];
-		memcpy(request, &apiVersion, sizeof(apiVersion));
-		memcpy(request, &requestType, sizeof(requestType));
-
-		// Send the request
-		if (send(daemonSocket, request, sizeof(request), 0) != sizeof(request)) {
-			return -1;
-		}
-
-		// Receive the response
-		uint16_t responseCode;
-		if (recv(daemonSocket, &responseCode, sizeof(responseCode), 0) != sizeof(responseCode)) {
-			return -1;
-		}
-
-		if (responseCode != OBDIIDaemonResponseCodeSuccess) {
-			return -1;
-		}
+		return requestRemoteSocket(s, 0);
 	} else {
 		return close(s->s);
 	}
-
-	return 0;
 }
 
 // Counts # bits set in the argument
