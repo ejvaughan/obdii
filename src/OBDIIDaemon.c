@@ -266,6 +266,8 @@ int main(int argc, char *argv[])
 	
 	// Open Log file
 	LogFile = fopen(LogPath, "a");
+
+	Log("Starting obdiid");
 	
 	s = socket(AF_UNIX, SOCK_DGRAM, 0);
 	if (s < 0) {
