@@ -2,7 +2,11 @@
 
 ## Overview
 
-This project represents a work-in-progress implementation of the On-board Diagnostics (OBD-II) protocol, an application layer protocol used to obtain diagnostic data from a vehicle. The project has three components: (1) a [C API](#obd-ii-api) for constructing OBD-II requests, decoding responses, and actually communicating with a vehicle via a CAN ISO-TP socket; (2) a [command line tool](#obd-ii-command-line-interface) that uses this API to query a vehicle for diagnostic data, and (3) a userspace [daemon](#daemon) that allows multiple clients using the API to communicate on the bus using the same ISO-TP socket (see [below](#daemon) for when this is useful). The API is built as a shared library and can be linked to by any interested clients, or built statically into the project.
+This project represents a work-in-progress implementation of the On-board Diagnostics (OBD-II) protocol, an application layer protocol used to obtain diagnostic data from a vehicle. The project has three components:
+
+1. A [C API](#obd-ii-api) for constructing OBD-II requests, decoding responses, and actually communicating with a vehicle via a CAN ISO-TP socket
+2. A [command line tool](#obd-ii-command-line-interface) that uses this API to query a vehicle for diagnostic data
+3. A userspace [daemon](#daemon) that allows multiple clients using the API to communicate on the bus using the same ISO-TP socket (see [below](#daemon) for when this is useful). The API is built as a shared library and can be linked to by any interested clients, or built statically into the project.
 
 In addition, bindings are available for Python, allowing the API to be used from the Python interpreter or a script. See the [Python](#python-bindings) section for more details.
 
