@@ -32,7 +32,7 @@ The work of the protocol layer (request -> raw bytes; raw bytes -> response) occ
 
 The communication layer is responsible for actually communicating with a connected vehicle. The vehicle must be exposed as a CAN network interface. The main functions you will interact with are `OBDIIOpenSocket`, `OBDIIPerformQuery`, and `OBDIIGetSupportedCommands` (contained in `OBDIICommunication.h`).
 
-1. `OBDIIOpenSocket`: Opens a communications channel to a particular ECU, which is identified by a (transfer ID, receive ID) tuple. The transfer ID is the ID that the ECU listens to on the CAN network, and the receive ID is what the ECU uses to respond.
+1. `OBDIIOpenSocket`: Opens a communications channel to a particular ECU, which is identified by an `(interface, transfer ID, receive ID)` tuple. The transfer ID is the ID that the ECU listens to on the CAN network, and the receive ID is what the ECU uses to respond.
 
 2. `OBDIIPerformQuery`: Writes an `OBDIICommand`'s payload into the socket and decodes the response as an `OBDIIResponse` object. Depending on the type of data returned by the command, the diagnostic data will be available via the `numericValue`, `bitfieldValue`, or `stringValue` properties of the response.
 
@@ -71,7 +71,7 @@ OBDIICloseSocket(&s);
 
 ### Using in your own projects
 
-You can link to the API statically, by compiling the necessary source files into your project, or dyanmically, by building the API as a shared library which you then link to.
+You can link to the API statically, by compiling the necessary source files into your project, or dynamically, by building the API as a shared library which you then link to.
 
 #### Shared library
 
@@ -87,11 +87,11 @@ You can link to the API statically, by compiling the necessary source files into
 
 ## Daemon
 
-The communication layer of the API has an annoying limitation, which is that only one process can open a socket to a particular (interface, transfer ID, receive ID) tuple at a time. If two separate processes try to open a socket using the same parameters, bad things will happen.
+The communication layer of the API has an annoying limitation, which is that only one process can open a socket to a particular `(interface, transfer ID, receive ID)` tuple at a time. If two separate processes try to open a socket using the same parameters, bad things will happen.
 
 There is a solution, however, which is to run the `obdiid` daemon, which can open sockets on clients' behalf so that they can be shared across multiple processes. Additionally, when a client calls `OBDIIOpenSocket`, it must pass `1` for the shared parameter, which indicates that the socket should be opened by the daemon instead of the calling process.
 
-For technical details about the daemon, such as the protocol it uses to communicate with the API and how the socket sharing works, see [daemon.md](src/daemon.md).
+For technical details about the daemon, such as the protocol it uses and how the socket sharing works, see [daemon.md](src/daemon.md).
 
 ### Installation
 
@@ -117,9 +117,10 @@ For technical details about the daemon, such as the protocol it uses to communic
 
 The command line utility can be invoked as follows:
 
-    Usage: cli -t <transfer CAN ID> -r <receive CAN ID> <CAN interface>
+    Usage: cli -t <transfer CAN ID> -r <receive CAN ID> [-d] <CAN interface>
 	<transfer CAN ID>: The CAN ID that will be used for sending the diagnostic requests. For 11-bit identifiers, this can be either the broadcast ID, 0x7DF, or an ID in the range 0x7E0 to 0x7E7, indicating a particular ECU.
 	<receive CAN ID>: The CAN ID that the ECU will be using to respond to the diagnostic requests that are sent. For 11-bit identifiers, this is an ID in the range 0x7E8 to 0x7EF (i.e. <transfer CAN ID> + 8)
+	-d: Use a shared socket to allow other programs to access the ECU (the obdiid daemon must be running for this to work)
 
 The particular IDs used for sending/receiving will be dependent on the vehicle. Most vehicles will use the IDs explained in the usage message above. However, some vehicles use extended (29-bit) identifiers. For example, for a 2009 Honda Civic, the transfer ID must be 0x18DB33F1, and the ECU will respond with an ID of 0x18DAF110. Therefore, the utility will be invoked like so:
 

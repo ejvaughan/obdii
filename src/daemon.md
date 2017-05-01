@@ -1,12 +1,14 @@
 # Overview
 
-As explained in the project [readme](../README.md), the purpose of the daemon is to allow multiple client programs to open an `OBDIISocket` to the same (interface, transfer ID, receive ID) tuple simultaneously. Clients send a request to the daemon to open a socket on their behalf, and then the daemon sends back the socket's file descriptor, which a client can use directly. Importantly, clients must obtain exclusive access to the socket before performing any reads and writes via a call to `flock`. This is done automatically by the `OBDIIPerformQuery` API.
+As explained in the project [readme](../README.md), the purpose of the daemon is to allow multiple client programs to open an `OBDIISocket` to the same `(interface, transfer ID, receive ID)` tuple simultaneously. Clients send a request to the daemon to open a socket on their behalf, and then the daemon sends back the socket's file descriptor, which a client can use directly. Importantly, clients must obtain exclusive access to the socket before performing any reads and writes via a call to `flock`. This is done automatically by the `OBDIIPerformQuery` API.
 
-Clients communicate with the daemon using a Unix domain datagram socket, which is listening for requests at `/tmp/obdiid.sock`. See the [protocol](#protocol) section for the request/response format.
+Clients communicate with the daemon using a Unix domain datagram socket, sending requests to `/tmp/obdiid.sock`. See the [protocol](#protocol) section for the request/response format.
 
 ## Sequence diagram
 
 ![sequence diagram](../doc/images/obdiidsequencediagram.png)
+
+In the sequence diagram above, after the daemon sends a successful response to the client, it then passes the socket's file descriptor to the client using `sendmsg`. The client accepts the file descriptor using a call to `recvmsg`. This effectively dups the file descriptor across the processes.
 
 ## Protocol
 
