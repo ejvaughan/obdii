@@ -52,7 +52,7 @@ int OBDIICloseSocket(OBDIISocket *s);
  * This is the main API that clients will interact with. It writes the command's request payload into the socket
  * and reads the response payload, decoding it as an `OBDIIResponse` object.
  *
- *     OBDIIResponse response = OBDIIPerformQuery(s, OBDIICommands.engineRPMs);
+ *     OBDIIResponse response = OBDIIPerformQuery(&s, OBDIICommands.engineRPMs);
  *     if (response.success) {
  *         printf("%.2f", response.numericValue);
  *     } else {
@@ -69,7 +69,7 @@ OBDIIResponse OBDIIPerformQuery(OBDIISocket *s, OBDIICommand *command);
 
 /** Queries the car for the commands it supports.
  *
- *     OBDIICommandSet commands = OBDIIGetSupportedCommands(s);
+ *     OBDIICommandSet commands = OBDIIGetSupportedCommands(&s);
  *     if (OBDIICommandSetContainsCommand(&commands, OBDIICommands.engineRPMs)) {
  *         // Query the vehicle
  *     }
