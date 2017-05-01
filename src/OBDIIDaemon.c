@@ -49,6 +49,8 @@ OBDIISocketConnection *openSocketConnection(unsigned int ifindex, canid_t tid, c
 	addr.can_addr.tp.rx_id = rid;
 	addr.can_family = AF_CAN;
 	addr.can_ifindex = ifindex;
+
+	Log("Opening new socket...");
 	
 	if ((s = socket(PF_CAN, SOCK_DGRAM, CAN_ISOTP)) < 0) {
 		return NULL;
@@ -91,6 +93,8 @@ void closeSocketConnection(OBDIISocketConnection *conn)
 	conn->refcount--;
 
 	if (conn->refcount == 0) {
+		Log("Tearing down socket");
+
 		// Close socket
 		close(conn->s);
 
@@ -197,6 +201,7 @@ void handleSocketRequest(int s, struct sockaddr_un *caddr, socklen_t caddrlen, u
 
 	if (shouldOpen) {
 		if (found) {
+			Log("Found open socket: %i, refcount: %i", found->s, found->refcount);
 			found->refcount++;
 		} else if (!(found = openSocketConnection(ifindex, tid, rid))) {
 			sendResponseCode(s, caddr, caddrlen, OBDIIDaemonResponseCodeOpenSocketError);
