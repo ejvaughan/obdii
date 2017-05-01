@@ -2,15 +2,15 @@
 
 ## Overview
 
-This project represents a work-in-progress implementation of the On-board Diagnostics (OBD-II) protocol, an application layer protocol used to obtain diagnostic data from a vehicle. The project has two components: (1) a C API for constructing OBD-II requests, decoding responses, and actually communicating with a vehicle via a CAN ISOTP socket; and (2) a command line tool that uses this API to query a vehicle for diagnostic data. The API is built as a shared library and can be linked to by any interested clients.
+This project represents a work-in-progress implementation of the On-board Diagnostics (OBD-II) protocol, an application layer protocol used to obtain diagnostic data from a vehicle. The project has three components: (1) a C API for constructing OBD-II requests, decoding responses, and actually communicating with a vehicle via a CAN ISO-TP socket; (2) a command line tool that uses this API to query a vehicle for diagnostic data, and (3) a userspace daemon that allows multiple clients using the API to communicate on the bus using the same ISO-TP socket (see [section](#daemon) below for when this is useful). The API is built as a shared library and can be linked to by any interested clients, or built statically into the project.
 
 In addition, bindings are available for Python, allowing the API to be used from the Python interpreter or a script. See the [Python](#python-bindings) section for more details.
 
 ## Dependencies
 
-The communication layer of the API uses the ISO-TP transport protocol for its socket communication (as opposed to using a raw CAN socket). This protocol is implemented in a separate kernel module, whose code is available [here](https://github.com/hartkopp/can-isotp-modules).
+The [communication layer](#communication-layer) of the API uses the ISO-TP transport protocol for its socket communication (as opposed to using a raw CAN socket). This protocol is implemented in a separate kernel module, whose code is available [here](https://github.com/hartkopp/can-isotp-modules).
 
-In order to use the functions in `OBDIICommunication.h`, as well as the command line utility, the kernel module must be built and installed. The module's [README](https://github.com/hartkopp/can-isotp-modules/blob/master/README.isotp) has instructions for how to do this.
+In order to use the functions in `OBDIICommunication.h`, as well as the command line utility, the kernel module must be built and installed. See the module's [README](https://github.com/hartkopp/can-isotp-modules/blob/master/README.isotp) for how to do this.
 
 ## Hardware
 
@@ -30,21 +30,33 @@ The work of the protocol layer (request -> raw bytes; raw bytes -> response) occ
 
 ### Communication layer
 
-The communication layer is responsible for actually communicating with a connected vehicle. The vehicle must be exposed as a CAN network interface. The main functions you will interact with are `OBDIIOpenSocket`, `OBDIIPerformQuery`, and `OBDIIGetSupportedCommands` (contained in `OBDIICommunication.h`). To give you an example of how easy it is to start reading diagnostic data, observe:
+The communication layer is responsible for actually communicating with a connected vehicle. The vehicle must be exposed as a CAN network interface. The main functions you will interact with are `OBDIIOpenSocket`, `OBDIIPerformQuery`, and `OBDIIGetSupportedCommands` (contained in `OBDIICommunication.h`).
+
+1. `OBDIIOpenSocket`: Opens a communications channel to a particular ECU, which is identified by a (transfer ID, receive ID) tuple. The transfer ID is the ID that the ECU listens to on the CAN network, and the receive ID is what the ECU uses to respond.
+
+2. `OBDIIPerformQuery`: Writes an `OBDIICommand`'s payload into the socket and decodes the response as an `OBDIIResponse` object. Depending on the type of data returned by the command, the diagnostic data will be available via the `numericValue`, `bitfieldValue`, or `stringValue` properties of the response.
+
+3. `OBDIIGetSupportedCommands`: Queries the car for the commands it supports, returning an `OBDIICommandSet` object.
+
+See the header file for more documentation on the use of these functions.
+
+To give you an example of how easy it is to start reading diagnostic data, observe:
 
 ```C
-int s = OBDIIOpenSocket("can0", 0x7E0, 0x7E8); // Talk to the engine ECU
-if (s < 0) {
+// Talk to the engine ECU (transfer ID 0x7E0, receive ID 0x7E8) on can0 interface
+OBDIISocket s;
+
+if (OBDIIOpenSocket(&s, "can0", 0x7E0, 0x7E8, 0) < 0) {
     printf("Error opening socket: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
 }
 
 // Query the car for the commands it supports
-OBDIICommandSet supportedCommands = OBDIIGetSupportedCommands(s);
+OBDIICommandSet supportedCommands = OBDIIGetSupportedCommands(&s);
 
 if (OBDIICommandSetContainsCommand(&supportedCommands, OBDIICommands.engineRPMs)) {
     // Query the diagnostic data
-    OBDIIResponse response = OBDIIPerformQuery(s, OBDIICommands.engineRPMs);
+    OBDIIResponse response = OBDIIPerformQuery(&s, OBDIICommands.engineRPMs);
 
     if (response.success) {
         printf("Got engine RPMs: %.2f\n", response.numericValue);
@@ -54,14 +66,38 @@ if (OBDIICommandSetContainsCommand(&supportedCommands, OBDIICommands.engineRPMs)
 }
 
 OBDIICommandSetFree(&supportedCommands);
-OBDIICloseSocket(s);
+OBDIICloseSocket(&s);
 ```
 
 ### Using in your own projects
 
+You can link to the API statically, by compiling the necessary source files into your project, or dyanmically, by building the API as a shared library which you then link to.
+
+#### Shared library
+
 1. Clone the repo: `git clone --recursive git@github.com:ejvaughan/cse521.git`
-2. `cd` into the project directory and run `make shared`. This will produce a dynamic library named `libobdii.so` in the `build/` subdirectory. 
+2. `cd` into the project directory and run `make shared`. This will produce a shared library named `libobdii.so` in the `build/` subdirectory. 
 3. Link against this library, and include `OBDII.h` and `OBDIICommunication.h` in your project.
+
+#### Static linking
+
+1. Clone the repo: `git clone --recursive git@github.com:ejvaughan/cse521.git`
+2. Add `src/` to the include search paths: `-I src`
+3. Compile `OBDII.c` and `OBDIICommunication.c` into your project
+
+## Daemon
+
+The communication layer of the API has an annoying limitation, which is that only one process can open a socket to a particular (interface, transfer ID, receive ID) tuple at a time. If two separate processes try to open a socket using the same parameters, bad things will happen.
+
+There is a solution, however, which is to run the `obdiid` daemon, which can open sockets on clients' behalf so that they can be shared across multiple processes. Additionally, when a client calls `OBDIIOpenSocket`, it must pass `1` for the shared parameter, which indicates that the socket should be opened by the daemon instead of the calling process.
+
+For technical details about the daemon, such as the protocol it uses to communicate with the API and how the socket sharing works, see [daemon.md](src/daemon.md).
+
+### Installation
+
+1. Clone the repo: `git clone --recursive git@github.com:ejvaughan/cse521.git`
+2. `cd` into the project directory and run `make daemon`. This will produce an executable named `obdiid` in the `build/` subdirectory.
+3. You can run the daemon directly from the command line (`$ ./obdiid`), or install it somewhere and configure it to run on boot.
 
 ### Python bindings
 

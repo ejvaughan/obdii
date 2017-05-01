@@ -73,7 +73,7 @@
 int interrupted = 0;
 
 void print_usage(char *program_name) {
-	printf("Usage: %s -t <transfer CAN ID> -r <receive CAN ID> <CAN interface>\n	<transfer CAN ID>: The CAN ID that will be used for sending the diagnostic requests. For 11-bit identifiers, this can be either the broadcast ID, 0x7DF, or an ID in the range 0x7E0 to 0x7E7, indicating a particular ECU.\n	<receive CAN ID>: The CAN ID that the ECU will be using to respond to the diagnostic requests that are sent. For 11-bit identifiers, this is an ID in the range 0x7E8 to 0x7EF (i.e. <transfer CAN ID> + 8)\n", program_name);
+	printf("Usage: %s -t <transfer CAN ID> -r <receive CAN ID> [-d] <CAN interface>\n	<transfer CAN ID>: The CAN ID that will be used for sending the diagnostic requests. For 11-bit identifiers, this can be either the broadcast ID, 0x7DF, or an ID in the range 0x7E0 to 0x7E7, indicating a particular ECU.\n	<receive CAN ID>: The CAN ID that the ECU will be using to respond to the diagnostic requests that are sent. For 11-bit identifiers, this is an ID in the range 0x7E8 to 0x7EF (i.e. <transfer CAN ID> + 8)\n	-d: Use a shared socket to allow other programs to access the ECU (the obdiid daemon must be running for this to work)\n", program_name);
 }
 
 void handleInterrupted(int signum)
@@ -84,11 +84,11 @@ void handleInterrupted(int signum)
 int main(int argc, char **argv)
 {
     OBDIISocket s;
-    int opt, i;
+    int opt, i, use_daemon = 0;
     extern int optind, opterr, optopt;
     canid_t tx_id = NO_CAN_ID, rx_id = NO_CAN_ID;
 
-    while ((opt = getopt(argc, argv, "r:t:")) != -1) {
+    while ((opt = getopt(argc, argv, "r:t:d")) != -1) {
 	    switch (opt) {
 	    case 't':
 		    tx_id = strtoul(optarg, (char **)NULL, 16);
@@ -102,6 +102,9 @@ int main(int argc, char **argv)
 		    if (strlen(optarg) > 7) {
 			    rx_id |= CAN_EFF_FLAG;
 	            }
+		    break;
+	   case 'd':
+		    use_daemon = 1;
 		    break;
 
 	    default:
@@ -127,7 +130,7 @@ int main(int argc, char **argv)
 
     sigaction(SIGINT, &interruptSignalAction, NULL);
 
-    if ((OBDIIOpenSocket(&s, argv[optind], tx_id, rx_id, 0)) < 0) {
+    if ((OBDIIOpenSocket(&s, argv[optind], tx_id, rx_id, use_daemon)) < 0) {
 	printf("Error connecting to vehicle: %s\n", strerror(errno));
     	exit(EXIT_FAILURE);
     }
