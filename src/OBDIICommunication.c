@@ -11,12 +11,20 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/file.h>
-#include "ancillary.h"
 
 #define MAX_ISOTP_PAYLOAD 4095
 
 // Used for communicating with the daemon
 static int daemonSocket = -1;
+
+static inline void pack(unsigned char **buffer, void *data, int len) {
+	if (!buffer) {
+		return;
+	}
+
+	memcpy(*buffer, data, len);
+	*buffer += len;
+}
 
 static int setupDaemonCommunication() {
 	if (daemonSocket != -1) {
@@ -25,7 +33,7 @@ static int setupDaemonCommunication() {
 
 	struct sockaddr_un daemonAddr, selfAddr;
 	if ((daemonSocket = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0) {
-		return -1;
+		goto err;
 	}
 
 	memset(&selfAddr, 0, sizeof(struct sockaddr_un));
@@ -33,11 +41,11 @@ static int setupDaemonCommunication() {
 	snprintf(selfAddr.sun_path, sizeof(selfAddr.sun_path), "/tmp/obdii.%ld", (long)getpid());
 
 	if (unlink(selfAddr.sun_path) < 0 && errno != ENOENT) {
-		return -1;
+		goto err;
 	}
 
 	if (bind(daemonSocket, (struct sockaddr *)&selfAddr, sizeof(struct sockaddr_un)) < 0) {
-		return -1;
+		goto err;
 	}
 
 	memset(&daemonAddr, 0, sizeof(struct sockaddr_un));
@@ -46,8 +54,37 @@ static int setupDaemonCommunication() {
 
 	// Even though this is a connection-less socket, by using connect we can use send and recv calls instead of sendto/recvfrom
 	if (connect(daemonSocket, (struct sockaddr *)&daemonAddr, sizeof(struct sockaddr_un)) < 0) {
+		goto err;
+	}
+
+	return 0;
+
+err:
+	daemonSocket = -1;
+	return -1;
+}
+
+int receiveFD(int s, int *fd)
+{
+	if (!s) {
+		return 0;
+	}
+
+	struct msghdr msg = {0};
+	struct cmsghdr *cmsg;
+	
+	char buf[CMSG_SPACE(sizeof(int))];
+
+	msg.msg_control = buf;
+	msg.msg_controllen = sizeof(buf);
+
+	if (recvmsg(s, &msg, 0) < 0) {
 		return -1;
 	}
+
+	cmsg = CMSG_FIRSTHDR(&msg);
+
+	*fd = *(int *)CMSG_DATA(cmsg);
 
 	return 0;
 }
@@ -63,11 +100,13 @@ int requestRemoteSocket(OBDIISocket *obdiiSocket, int shouldOpen) {
 
 	// Marshal the request parameters
 	unsigned char request[16];
-	memcpy(request, &apiVersion, sizeof(apiVersion));
-	memcpy(request, &requestType, sizeof(requestType));
-	memcpy(request, &obdiiSocket->ifindex, sizeof(obdiiSocket->ifindex));
-	memcpy(request, &obdiiSocket->tid, sizeof(obdiiSocket->tid));
-	memcpy(request, &obdiiSocket->rid, sizeof(obdiiSocket->rid));
+	unsigned char *p = request;
+
+	pack(&p, &apiVersion, sizeof(apiVersion));
+	pack(&p, &requestType, sizeof(requestType));
+	pack(&p, &obdiiSocket->ifindex, sizeof(obdiiSocket->ifindex));
+	pack(&p, &obdiiSocket->tid, sizeof(obdiiSocket->tid));
+	pack(&p, &obdiiSocket->rid, sizeof(obdiiSocket->rid));
 
 	// Send the request
 	if (send(daemonSocket, request, sizeof(request), 0) != sizeof(request)) {
@@ -86,7 +125,7 @@ int requestRemoteSocket(OBDIISocket *obdiiSocket, int shouldOpen) {
 
 	if (shouldOpen) {
 		// Receive the socket
-		if (ancil_recv_fd(daemonSocket, &obdiiSocket->s) < 0) {
+		if (receiveFD(daemonSocket, &obdiiSocket->s) < 0) {
 			return -1;
 		}
 	}

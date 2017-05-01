@@ -7,11 +7,11 @@ CC = gcc
 #remove @ for no make command prints
 DEBUG=@
 
-LIBRARY_INCLUDE_DIRS = -I src -I src/libancillary
-LIBRARY_SRC_FILES=src/OBDII.c src/OBDIICommunication.c src/libancillary/fd_recv.c
+LIBRARY_INCLUDE_DIRS = -I src
+LIBRARY_SRC_FILES=src/OBDII.c src/OBDIICommunication.c
 
-DAEMON_SRC_FILES = src/OBDIIDaemon.c src/libancillary/fd_send.c src/libancillary/fd_recv.c
-DAEMON_INCLUDE_DIRS = -I src -I src/libancillary
+DAEMON_SRC_FILES = src/OBDIIDaemon.c
+DAEMON_INCLUDE_DIRS = -I src
 
 APP_DIR = src
 APP_INCLUDE_DIRS += -I $(APP_DIR)

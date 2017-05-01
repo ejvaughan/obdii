@@ -10,7 +10,6 @@
 #include <unistd.h>
 #include <stdarg.h>
 
-#include "ancillary.h"
 #include "OBDIIDaemon.h"
 #include "OBDIICommunication.h"
 
@@ -146,7 +145,7 @@ static void dump(char *dest, char *src, unsigned int len)
 }
 
 int sendResponseCode(int s, struct sockaddr_un *caddr, socklen_t caddrlen, OBDIIDaemonResponseCode responseCode) {
-	if (sendto(s, &responseCode, sizeof(uint16_t), 0, (struct sockaddr *)&caddr, caddrlen) < 0) {
+	if (sendto(s, &responseCode, sizeof(uint16_t), 0, (struct sockaddr *)caddr, caddrlen) < 0) {
 		Log("Error sending response code %i to client: %s", responseCode, strerror(errno));
 		return -1;
 	}
@@ -155,6 +154,26 @@ int sendResponseCode(int s, struct sockaddr_un *caddr, socklen_t caddrlen, OBDII
 }
 
 #define asuint32(buf) ((buf)[0] | ((buf)[1] << 8) | ((buf)[2] << 16) | ((buf)[3] << 24))
+
+int sendFD(int s, struct sockaddr_un *caddr, socklen_t caddrlen, int fd)
+{
+	struct msghdr msg = {0};
+	struct cmsghdr *cmsg;
+	char buf[CMSG_SPACE(sizeof(int))];
+	
+	msg.msg_name = caddr;
+	msg.msg_namelen = caddrlen;
+	msg.msg_control = buf;
+	msg.msg_controllen = sizeof(buf);
+	cmsg = CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_level = SOL_SOCKET;
+	cmsg->cmsg_type = SCM_RIGHTS;
+	cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+	*(int *)CMSG_DATA(cmsg) = fd;
+	msg.msg_controllen = CMSG_SPACE(sizeof(int));
+
+	return sendmsg(s, &msg, 0);
+}
 
 void handleSocketRequest(int s, struct sockaddr_un *caddr, socklen_t caddrlen, unsigned char *request, ssize_t requestLen, int shouldOpen)
 {
@@ -187,7 +206,7 @@ void handleSocketRequest(int s, struct sockaddr_un *caddr, socklen_t caddrlen, u
 		sendResponseCode(s, caddr, caddrlen, OBDIIDaemonResponseCodeSuccess);
 
 		// Send the socket
-		if (ancil_send_fd(s, found->s) < 0) {
+		if (sendFD(s, caddr, caddrlen, found->s) < 0) {
 			Log("Error sending OBDII socket (%i, %x, %x) to client: %s", found->ifindex, found->tid, found->rid, strerror(errno));
 		}
 	} else {
