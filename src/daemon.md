@@ -6,7 +6,7 @@ Clients communicate with the daemon using a Unix domain datagram socket, which i
 
 ## Sequence diagram
 
-![sequence diagram](../doc/images/obdiidsequencediagram.svg)
+![sequence diagram](../doc/images/obdiidsequencediagram.png)
 
 ## Protocol
 
@@ -16,7 +16,7 @@ All multi-byte fields are in little endian order.
 
 A request has the following format:
 
-![request format](../doc/images/obdiidrequestformat.svg)
+![request format](../doc/images/obdiidrequestformat.png)
 
 Currently, the only supported value for `API version` is `1`.
 
@@ -29,7 +29,7 @@ Supported request types:
 
 For both the `Open Socket` and `Close Socket` request types, the parameters are as follows:
 
-![request parameters format](../doc/images/obdiidrequestparameters.svg)
+![request parameters format](../doc/images/obdiidrequestparameters.png)
 
 The `CAN interface index` parameter is the interface's index number as returned by a call to `if_nametoindex`.
 
