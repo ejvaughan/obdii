@@ -91,7 +91,7 @@ The communication layer of the API has an annoying limitation, which is that onl
 
 There is a solution, however, which is to run the `obdiid` daemon, which can open sockets on clients' behalf so that they can be shared across multiple processes. Additionally, when a client calls `OBDIIOpenSocket`, it must pass `1` for the shared parameter, which indicates that the socket should be opened by the daemon instead of the calling process.
 
-For technical details about the daemon, such as the protocol it uses and how the socket sharing works, see [daemon.md](src/daemon.md).
+For technical details about the daemon, such as the protocol it uses and how the socket sharing works, see [daemon.md](doc/daemon.md).
 
 ### Building
 
