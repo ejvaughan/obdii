@@ -138,94 +138,94 @@ typedef struct OBDIICommandSet {
 
 struct OBDIICommands {
 	// Mode 1
-	OBDIICommand *mode1SupportedPIDs_1_to_20;
-	OBDIICommand *monitorStatus;
-	OBDIICommand *freezeDTC;
-	OBDIICommand *fuelSystemStatus;
-	OBDIICommand *calculatedEngineLoad;		// Percentage
-	OBDIICommand *engineCoolantTemperature;		// Celsius
-	OBDIICommand *bank1ShortTermFuelTrim;		// Percentage
-	OBDIICommand *bank1LongTermFueldTrim;		// Percentage
-	OBDIICommand *bank2ShortTermFuelTrim; 		// Percentage
-	OBDIICommand *bank2LongTermFuelTrim; 		// Percentage
-	OBDIICommand *fuelPressure; 			// kPA
-	OBDIICommand *intakeManifoldAbsolutePressure; 	// kPA
-	OBDIICommand *engineRPMs;			// rpm
-	OBDIICommand *vehicleSpeed;			// km/h
-	OBDIICommand *timingAdvance;			// Degrees before TDC
-	OBDIICommand *intakeAirTemperature;		// Celsius
-	OBDIICommand *mafAirFlowRate;			// grams/sec
-	OBDIICommand *throttlePosition;			// Percentage
-	OBDIICommand *commandedSecondaryAirStatus;
-	OBDIICommand *oxygenSensorsPresentIn2Banks;
-	OBDIICommand *oxygenSensor1_fuelTrim;
-	OBDIICommand *oxygenSensor2_fuelTrim;
-	OBDIICommand *oxygenSensor3_fuelTrim;
-	OBDIICommand *oxygenSensor4_fuelTrim;
-	OBDIICommand *oxygenSensor5_fuelTrim;
-	OBDIICommand *oxygenSensor6_fuelTrim;
-	OBDIICommand *oxygenSensor7_fuelTrim;
-	OBDIICommand *oxygenSensor8_fuelTrim;
-	OBDIICommand *conformingStandards;
-	OBDIICommand *oxygenSensorsPresentIn4Banks;
-	OBDIICommand *auxiliaryInputStatus;
-	OBDIICommand *runtimeSinceEngineStart;		// seconds
-	OBDIICommand *mode1SupportedPIDs_21_to_40;
-	OBDIICommand *distanceTraveledWithMalfunctionIndicatorLampOn;	// km
-	OBDIICommand *fuelRailPressure;			// kPA
-	OBDIICommand *fuelRailGaugePressure; 		// kPA
-	OBDIICommand *oxygenSensor1_fuelAirRatioVoltage;
-	OBDIICommand *oxygenSensor2_fuelAirRatioVoltage;
-	OBDIICommand *oxygenSensor3_fuelAirRatioVoltage;
-	OBDIICommand *oxygenSensor4_fuelAirRatioVoltage;
-	OBDIICommand *oxygenSensor5_fuelAirRatioVoltage;
-	OBDIICommand *oxygenSensor6_fuelAirRatioVoltage;
-	OBDIICommand *oxygenSensor7_fuelAirRatioVoltage;
-	OBDIICommand *oxygenSensor8_fuelAirRatioVoltage;
-	OBDIICommand *commandedEGR;			// Percentage
-	OBDIICommand *egrError;				// Percentage
-	OBDIICommand *commandedEvaporativePurge; 	// Percentage
-	OBDIICommand *fuelTankLevelInput;		// Percentage
-	OBDIICommand *warmUpsSinceCodesCleared;
-	OBDIICommand *distanceTraveledSinceCodesCleared; // km
-	OBDIICommand *evaporativeSystemVaporPressure; 	// Pa
-	OBDIICommand *absoluteBarometricPressure; 	// kPa
-	OBDIICommand *oxygenSensor1_fuelAirRatioCurrent;	// current in mA
-	OBDIICommand *oxygenSensor2_fuelAirRatioCurrent;
-	OBDIICommand *oxygenSensor3_fuelAirRatioCurrent;
-	OBDIICommand *oxygenSensor4_fuelAirRatioCurrent;
-	OBDIICommand *oxygenSensor5_fuelAirRatioCurrent;
-	OBDIICommand *oxygenSensor6_fuelAirRatioCurrent;
-	OBDIICommand *oxygenSensor7_fuelAirRatioCurrent;
-	OBDIICommand *oxygenSensor8_fuelAirRatioCurrent;
-	OBDIICommand *catalystTemperatureBank1Sensor1; 	// Celsius
-	OBDIICommand *catalystTemperatureBank2Sensor1;	// Celsius
-	OBDIICommand *catalystTemperatureBank1Sensor2;	// Celsius
-	OBDIICommand *catalystTemperatureBank2Sensor2;	// Celsius
-	OBDIICommand *mode1SupportedPIDs_41_to_60;
-	OBDIICommand *currentDriveCycleMonitorStatus;
-	OBDIICommand *controlModuleVoltage;
-	OBDIICommand *absoluteLoadValue;			// Percentage
-	OBDIICommand *fuelAirCommandEquivalenceRatio;
-	OBDIICommand *relativeThrottlePosition;		// Percentage
-	OBDIICommand *ambientAirTemperature;		// Celsius
-	OBDIICommand *absoluteThrottlePositionB;		// Percentage
-	OBDIICommand *absoluteThrottlePositionC;		// Percentage
-	OBDIICommand *acceleratorPedalPositionD;		// Percentage
-	OBDIICommand *acceleratorPedalPositionE;		// Percentage
-	OBDIICommand *acceleratorPedalPositionF;		// Percentage
-	OBDIICommand *commandedThrottleActuator;		// Percentage
-	OBDIICommand *timeRunWithMalfunctionIndicatorLampOn;	// minutes
-	OBDIICommand *timeSinceTroubleCodesCleared;	// minutes
+	OBDIICommand *mode1SupportedPIDs_1_to_20;	// bitfield
+	OBDIICommand *monitorStatus;			// bitfield
+	OBDIICommand *freezeDTC;			// other
+	OBDIICommand *fuelSystemStatus;			// bitfield
+	OBDIICommand *calculatedEngineLoad;		// numeric
+	OBDIICommand *engineCoolantTemperature;		// numeric
+	OBDIICommand *bank1ShortTermFuelTrim;		// numeric
+	OBDIICommand *bank1LongTermFueldTrim;		// numeric
+	OBDIICommand *bank2ShortTermFuelTrim; 		// numeric
+	OBDIICommand *bank2LongTermFuelTrim; 		// numeric
+	OBDIICommand *fuelPressure; 			// numeric
+	OBDIICommand *intakeManifoldAbsolutePressure; 	// numeric
+	OBDIICommand *engineRPMs;			// numeric
+	OBDIICommand *vehicleSpeed;			// numeric
+	OBDIICommand *timingAdvance;			// numeric
+	OBDIICommand *intakeAirTemperature;		// numeric
+	OBDIICommand *mafAirFlowRate;			// numeric
+	OBDIICommand *throttlePosition;			// numeric
+	OBDIICommand *commandedSecondaryAirStatus;	// bitfield
+	OBDIICommand *oxygenSensorsPresentIn2Banks;	// bitfield
+	OBDIICommand *oxygenSensor1_fuelTrim;		// other
+	OBDIICommand *oxygenSensor2_fuelTrim;		// other
+	OBDIICommand *oxygenSensor3_fuelTrim;		// other
+	OBDIICommand *oxygenSensor4_fuelTrim;		// other
+	OBDIICommand *oxygenSensor5_fuelTrim;		// other
+	OBDIICommand *oxygenSensor6_fuelTrim;		// other
+	OBDIICommand *oxygenSensor7_fuelTrim;		// other
+	OBDIICommand *oxygenSensor8_fuelTrim;		// other
+	OBDIICommand *conformingStandards;		// bitfield
+	OBDIICommand *oxygenSensorsPresentIn4Banks;	// bitfield
+	OBDIICommand *auxiliaryInputStatus;		// bitfield
+	OBDIICommand *runtimeSinceEngineStart;		// numeric
+	OBDIICommand *mode1SupportedPIDs_21_to_40;	// bitfield
+	OBDIICommand *distanceTraveledWithMalfunctionIndicatorLampOn;	// numeric
+	OBDIICommand *fuelRailPressure;			// numeric
+	OBDIICommand *fuelRailGaugePressure; 		// numeric
+	OBDIICommand *oxygenSensor1_fuelAirRatioVoltage;// other
+	OBDIICommand *oxygenSensor2_fuelAirRatioVoltage;// other
+	OBDIICommand *oxygenSensor3_fuelAirRatioVoltage;// other
+	OBDIICommand *oxygenSensor4_fuelAirRatioVoltage;// other
+	OBDIICommand *oxygenSensor5_fuelAirRatioVoltage;// other
+	OBDIICommand *oxygenSensor6_fuelAirRatioVoltage;// other
+	OBDIICommand *oxygenSensor7_fuelAirRatioVoltage;// other
+	OBDIICommand *oxygenSensor8_fuelAirRatioVoltage;// other
+	OBDIICommand *commandedEGR;			// numeric
+	OBDIICommand *egrError;				// numeric
+	OBDIICommand *commandedEvaporativePurge; 	// numeric
+	OBDIICommand *fuelTankLevelInput;		// numeric
+	OBDIICommand *warmUpsSinceCodesCleared;		// numeric
+	OBDIICommand *distanceTraveledSinceCodesCleared;// numeric
+	OBDIICommand *evaporativeSystemVaporPressure; 	// numeric
+	OBDIICommand *absoluteBarometricPressure; 	// numeric
+	OBDIICommand *oxygenSensor1_fuelAirRatioCurrent;// other
+	OBDIICommand *oxygenSensor2_fuelAirRatioCurrent;// other
+	OBDIICommand *oxygenSensor3_fuelAirRatioCurrent;// other
+	OBDIICommand *oxygenSensor4_fuelAirRatioCurrent;// other
+	OBDIICommand *oxygenSensor5_fuelAirRatioCurrent;// other
+	OBDIICommand *oxygenSensor6_fuelAirRatioCurrent;// other
+	OBDIICommand *oxygenSensor7_fuelAirRatioCurrent;// other
+	OBDIICommand *oxygenSensor8_fuelAirRatioCurrent;// other
+	OBDIICommand *catalystTemperatureBank1Sensor1; 	// numeric
+	OBDIICommand *catalystTemperatureBank2Sensor1;	// numeric
+	OBDIICommand *catalystTemperatureBank1Sensor2;	// numeric
+	OBDIICommand *catalystTemperatureBank2Sensor2;	// numeric
+	OBDIICommand *mode1SupportedPIDs_41_to_60;	// bitfield
+	OBDIICommand *currentDriveCycleMonitorStatus;	// bitfield
+	OBDIICommand *controlModuleVoltage;		// numeric
+	OBDIICommand *absoluteLoadValue;		// numeric
+	OBDIICommand *fuelAirCommandEquivalenceRatio;	// numeric
+	OBDIICommand *relativeThrottlePosition;		// numeric
+	OBDIICommand *ambientAirTemperature;		// numeric
+	OBDIICommand *absoluteThrottlePositionB;	// numeric
+	OBDIICommand *absoluteThrottlePositionC;	// numeric
+	OBDIICommand *acceleratorPedalPositionD;	// numeric
+	OBDIICommand *acceleratorPedalPositionE;	// numeric
+	OBDIICommand *acceleratorPedalPositionF;	// numeric
+	OBDIICommand *commandedThrottleActuator;	// numeric
+	OBDIICommand *timeRunWithMalfunctionIndicatorLampOn;	// numeric
+	OBDIICommand *timeSinceTroubleCodesCleared;	// numeric
 	/*OBDIICommand *mode1SupportedPIDs_61_to_80;*/
 	
 	// Mode 3
-	OBDIICommand *DTCs;
+	OBDIICommand *DTCs;				// other
 
 	// Mode 9
-	OBDIICommand *mode9SupportedPIDs;
-	OBDIICommand *vinMessageCount;
-	OBDIICommand *VIN;
+	OBDIICommand *mode9SupportedPIDs;		// bitfield
+	OBDIICommand *vinMessageCount;			// numeric
+	OBDIICommand *VIN;				// string
 	OBDIICommand *ECUName;
 };
 
