@@ -101,17 +101,31 @@ For technical details about the daemon, such as the protocol it uses and how the
 
 ### Python bindings
 
-< fill me in >
+It's possible to use the API from Python via `bindings.py`, which uses the `ctypes` module to expose the necessary functions and types from the shared library. Here's an example:
+
+    >>> from bindings import *
+    >>> from ctypes import *
+    >>> s = OBDIISocket()
+    >>> OBDIIOpenSocket(pointer(s), "can0", 0x7E0, 0x7E8, 0)
+    >>> r = OBDIIPerformQuery(pointer(s), OBDIICommands.engineRPMs)
+    >>> r.success
+    1
+    >>> r.numericValue
+    780.0
+    >>> OBDIIResponseFree(pointer(r))
+    >>> OBDIICloseSocket(pointer(s))
+
+Note that you will need to install the [shared library](#shared-library) in a known location in order for it to be found from Python. E.g. `$ sudo cp build/libobdii.so /usr/local/lib/libobdii.so && ldconfig`
 
 ## OBD-II command line interface
 
-
+The command line interface is a simple utility that prints out a vehicle's list of supported commands, prompting the user to select a command with which to query the car.
 
 ### Building
 
 1. Clone the repo: `git clone --recursive git@github.com:ejvaughan/cse521.git`
 2. `cd` into the project directory and run `make cli`. This will produce an executable named `cli` in the `build/` subdirectory.
-3. Run: `$ ./cli`
+3. Run: `$ ./cli ...`
 
 ### Usage
 
@@ -125,9 +139,4 @@ The command line utility can be invoked as follows:
 The particular IDs used for sending/receiving will be dependent on the vehicle. Most vehicles will use the IDs explained in the usage message above. However, some vehicles use extended (29-bit) identifiers. For example, for a 2009 Honda Civic, the transfer ID must be 0x18DB33F1, and the ECU will respond with an ID of 0x18DAF110. Therefore, the utility will be invoked like so:
 
     cli -t 18DB33F1 -r 18DAF110 can0
-
-### Functionality
-
-< fill me in >
-
 
