@@ -13,6 +13,31 @@
 #include "OBDIIDaemon.h"
 #include "OBDIICommunication.h"
 
+static FILE *LogFile = NULL;
+static const char *LogPath = "/var/log/obdiid/obdiid.log";
+
+// Logging facility
+static void Log(const char *format, ...) {
+	if (LogFile) {
+		time_t t;
+		char timestr[26];
+		struct tm* tm_info;
+
+		time(&t);
+		tm_info = localtime(&t);
+
+		strftime(timestr, 26, "%Y-%m-%d %H:%M:%S", tm_info);
+		fprintf(LogFile, "%s ", timestr);
+		va_list args;
+		va_start(args, format);
+		vfprintf(LogFile, format, args);
+		va_end(args);
+
+		fprintf(LogFile, "\n");
+		fflush(LogFile);
+	}
+}
+
 typedef struct OBDIISocketConnection {
 	unsigned int ifindex;
 	canid_t tid;
@@ -115,31 +140,6 @@ void closeSocketConnection(OBDIISocketConnection *conn)
 	}
 }
 
-static FILE *LogFile = NULL;
-static const char *LogPath = "/var/log/obdiid/obdiid.log";
-
-// Logging facility
-static void Log(const char *format, ...) {
-	if (LogFile) {
-		time_t t;
-		char timestr[26];
-		struct tm* tm_info;
-
-		time(&t);
-		tm_info = localtime(&t);
-
-		strftime(timestr, 26, "%Y-%m-%d %H:%M:%S", tm_info);
-		fprintf(LogFile, "%s ", timestr);
-		va_list args;
-		va_start(args, format);
-		vfprintf(LogFile, format, args);
-		va_end(args);
-
-		fprintf(LogFile, "\n");
-		fflush(LogFile);
-	}
-}
-
 static void dump(char *dest, char *src, unsigned int len)
 {
 	unsigned int i;
@@ -147,6 +147,8 @@ static void dump(char *dest, char *src, unsigned int len)
 		sprintf(dest, "%02x", src[i]);
 	}
 }
+
+#define asuint32(buf) ((buf)[0] | ((buf)[1] << 8) | ((buf)[2] << 16) | ((buf)[3] << 24))
 
 int sendResponseCode(int s, struct sockaddr_un *caddr, socklen_t caddrlen, OBDIIDaemonResponseCode responseCode) {
 	if (sendto(s, &responseCode, sizeof(uint16_t), 0, (struct sockaddr *)caddr, caddrlen) < 0) {
@@ -156,8 +158,6 @@ int sendResponseCode(int s, struct sockaddr_un *caddr, socklen_t caddrlen, OBDII
 
 	return 0;
 }
-
-#define asuint32(buf) ((buf)[0] | ((buf)[1] << 8) | ((buf)[2] << 16) | ((buf)[3] << 24))
 
 int sendFD(int s, struct sockaddr_un *caddr, socklen_t caddrlen, int fd)
 {
