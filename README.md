@@ -79,13 +79,13 @@ You can link to the API statically, by compiling the necessary source files into
 
 #### Shared library
 
-1. Clone the repo: `git clone --recursive git@github.com:ejvaughan/cse521.git`
+1. Clone the repo: `git clone --recursive git@github.com:ejvaughan/obdii.git`
 2. `cd` into the project directory and run `make shared`. This will produce a shared library named `libobdii.so` in the `build/` subdirectory. 
 3. Link against this library, and include `OBDII.h` and `OBDIICommunication.h` in your project.
 
 #### Static linking
 
-1. Clone the repo: `git clone --recursive git@github.com:ejvaughan/cse521.git`
+1. Clone the repo: `git clone --recursive git@github.com:ejvaughan/obdii.git`
 2. Add `src/` to the include search paths: `-I src`
 3. Compile `OBDII.c` and `OBDIICommunication.c` into your project
 
@@ -99,7 +99,7 @@ For technical details about the daemon, such as the protocol it uses and how the
 
 ### Building
 
-1. Clone the repo: `git clone --recursive git@github.com:ejvaughan/cse521.git`
+1. Clone the repo: `git clone --recursive git@github.com:ejvaughan/obdii.git`
 2. `cd` into the project directory and run `make daemon`. This will produce an executable named `obdiid` in the `build/` subdirectory.
 3. You can run the daemon directly from the command line (`$ ./obdiid`), or install it somewhere and configure it to run on boot.
 
@@ -127,7 +127,7 @@ The command line interface is a simple utility that prints out a vehicle's list 
 
 ### Building
 
-1. Clone the repo: `git clone --recursive git@github.com:ejvaughan/cse521.git`
+1. Clone the repo: `git clone --recursive git@github.com:ejvaughan/obdii.git`
 2. `cd` into the project directory and run `make cli`. This will produce an executable named `cli` in the `build/` subdirectory.
 3. Run: `$ ./cli ...`
 
