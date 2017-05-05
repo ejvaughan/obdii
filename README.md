@@ -18,7 +18,11 @@ In order to use the functions in `OBDIICommunication.h`, as well as the command 
 
 ## Hardware
 
-This API is designed to work with any vehicle that is exposed on the local machine as a CAN network interface. Therefore, any OBD-II adaptor that exposes itself as a CAN device can be used. For example, the [PiCAN2](http://skpang.co.uk/catalog/pican2-canbus-board-for-raspberry-pi-23-p-1475.html) is such an adaptor for the Raspberry Pi. Linux supports a family of sockets specifically for CAN communication (the `PF_CAN` protocol family), which the API uses for communicating with the vehicle.
+This API is designed to work with any vehicle that is exposed on the local machine as a CAN network interface. Some supported CAN bus adaptors include:
+
+1. [PiCAN2](http://skpang.co.uk/catalog/pican2-canbus-board-for-raspberry-pi-23-p-1475.html) (Raspberry Pi)
+2. [USB2CAN] (http://www.8devices.com/products/usb2can)
+3. [PCAN-USB] (http://www.peak-system.com/PCAN-USB.199.0.html?&L=1)
 
 ## OBD-II API
 
