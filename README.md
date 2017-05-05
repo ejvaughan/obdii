@@ -21,8 +21,8 @@ In order to use the functions in `OBDIICommunication.h`, as well as the command 
 This API is designed to work with any vehicle that is exposed on the local machine as a CAN network interface. Some supported CAN bus adaptors include:
 
 1. [PiCAN2](http://skpang.co.uk/catalog/pican2-canbus-board-for-raspberry-pi-23-p-1475.html) (Raspberry Pi)
-2. [USB2CAN] (http://www.8devices.com/products/usb2can)
-3. [PCAN-USB] (http://www.peak-system.com/PCAN-USB.199.0.html?&L=1)
+2. [USB2CAN](http://www.8devices.com/products/usb2can)
+3. [PCAN-USB](http://www.peak-system.com/PCAN-USB.199.0.html?&L=1)
 
 ## OBD-II API
 
