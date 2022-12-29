@@ -2,6 +2,10 @@
 #define __OBDII_H
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define OBDII_API_VERSION 1
 
 #define VARIABLE_RESPONSE_LENGTH 0
@@ -265,5 +269,9 @@ int OBDIICommandSetContainsCommand(OBDIICommandSet *commandSet, OBDIICommand *co
  * \param commandSet A pointer to the command set whose resources should be freed.
  */
 void OBDIICommandSetFree(OBDIICommandSet *commandSet);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* OBDII.h */

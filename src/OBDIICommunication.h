@@ -4,6 +4,10 @@
 #include "OBDII.h"
 #include <linux/can.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Opaque structure representing an OBDII socket */
 typedef struct {
 	int s;
@@ -76,5 +80,9 @@ OBDIIResponse OBDIIPerformQuery(OBDIISocket *s, OBDIICommand *command);
  *     OBDIICommandSetFree(&commands);
  */
 OBDIICommandSet OBDIIGetSupportedCommands(OBDIISocket *s);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* OBDIICommunication.h */
